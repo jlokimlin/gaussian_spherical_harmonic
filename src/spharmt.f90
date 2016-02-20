@@ -29,31 +29,31 @@ module type_GaussianSphericalHarmonic
     type GaussianSphericalHarmonic
 
         ! rsphere is radius of sphere in m.
-        real    :: rsphere = 0.
+        real (wp)   :: RADIUS_OF_SPHERE = 0.0_wp
 
         ! nlons is number of longitudes (not including cyclic point).
-        integer :: nlons = 0
+        integer (ip) :: nlons = 0
 
         ! nlats is number of gaussian latitudes.
-        integer :: nlats = 0
+        integer (ip) :: nlats = 0
 
         ! for fft.
-        real, dimension(:), allocatable :: trigs
+        real (wp), dimension(:), allocatable :: trigs
         integer (ip), dimension(:), allocatable :: ifax
 
         ! ntrunc is triangular truncation limit (e.g. 42 for T42 truncation)
-        integer :: ntrunc = 0
+        integer (ip) :: ntrunc = 0
 
         ! gaulats is sin(gaussian lats), weights are gaussian weights,
         ! gwrc is gaussian weights divided by re*cos(lat)**2, lap is
         ! the laplacian operatore -n*(n+1)/re**2 (where n is the degree
         ! of the spherical harmonic),
         ! ilap is the inverse laplacian (1/lap, set to zero for n=0).
-        real, dimension(:), allocatable :: gaulats, weights, gwrc, lap, ilap
+        real (wp), dimension(:), allocatable :: gaulats, weights, gwrc, lap, ilap
 
         ! pnm is associated legendre polynomials, hnm is -(1-x**2)d(pnm)/dx,
         ! where x = gaulats.
-        real, dimension(:,:), allocatable :: pnm, hnm
+        real (wp), dimension(:,:), allocatable :: pnm, hnm
 
         ! indxm is zonal wavenumber index, indxn is spherical harmonic degree index.
         integer (ip), dimension(:), allocatable :: indxm, indxn
@@ -70,21 +70,22 @@ contains
         integer (ip), intent(in) :: nlon
         integer (ip), intent(in) ::nlat
         integer (ip), intent(in) ::ntrunc
-        real, intent(in) :: re
+        real (wp), intent(in) :: re
         class (GaussianSphericalHarmonic), intent(in out) :: this
-        real, dimension(:), allocatable :: pnm_tmp
-        real, dimension(:), allocatable ::hnm_tmp
+        real (wp), dimension(:), allocatable :: pnm_tmp
+        real (wp), dimension(:), allocatable ::hnm_tmp
         real (wp), dimension(:), allocatable :: gaulats_tmp
         real (wp), dimension(:), allocatable ::weights_tmp
-        integer:: nmdim
-        integer::m
-        integer::n
-        integer::j
+        integer (ip) :: nmdim
+        integer (ip) ::m
+        integer (ip) ::n
+        integer (ip) ::j
+
 
         this%nlons = nlon
         this%nlats = nlat
         this%ntrunc = ntrunc
-        this%rsphere = re
+        this%RADIUS_OF_SPHERE = re
 
         nmdim = (ntrunc+1)*(ntrunc+2)/2
 
@@ -92,7 +93,7 @@ contains
         allocate(weights_tmp(nlat))
         call gaulw(gaulats_tmp,weights_tmp)
         allocate(this%gwrc(nlat))
-        this%gwrc = weights_tmp/(dble(re)*(1.d0-gaulats_tmp**2))
+        this%gwrc = weights_tmp/(re*(1.0_wp-gaulats_tmp**2))
         allocate(this%gaulats(nlat))
         allocate(this%weights(nlat))
         this%gaulats = gaulats_tmp
@@ -106,7 +107,7 @@ contains
 
         this%indxm = (/((m,n=m,ntrunc),m=0,ntrunc)/)
         this%indxn = (/((n,n=m,ntrunc),m=0,ntrunc)/)
-        this%lap(:)=-real(this%indxn(:))*real(this%indxn(:)+1)/re**2
+        this%lap(:)=-real(this%indxn(:), kind=wp)*real(this%indxn(:)+1, kind=wp)/re**2
         this%ilap(1) = 0.
         this%ilap(2:nmdim) = 1./this%lap(2:nmdim)
 
@@ -114,11 +115,13 @@ contains
         allocate(this%hnm(nmdim,nlat))
         allocate(pnm_tmp(nmdim))
         allocate(hnm_tmp(nmdim))
+
         do j=1,nlat
             call legend(gaulats_tmp(j),pnm_tmp,hnm_tmp)
             this%pnm(:,j) = pnm_tmp(:)
             this%hnm(:,j) = hnm_tmp(:)
         end do
+
         deallocate(gaulats_tmp)
         deallocate(pnm_tmp)
         deallocate(hnm_tmp)
@@ -126,6 +129,7 @@ contains
         allocate(this%trigs((3*nlon/2)+1))
         allocate(this%ifax(13))
         call initialize_fft99(this%trigs,this%ifax,nlon)
+
 
         this%initialized = .true.
 
@@ -158,15 +162,15 @@ contains
         ! compute sin of gaussian latitudes and gaussian weights.
         ! uses the iterative method presented in Numerical Recipes.
 
-        real (wp), intent (in out), dimension(:) :: sinlats
-        real (wp), intent (in out), dimension(:) :: wts
+        real (wp), intent (in out) :: sinlats(:)
+        real (wp), intent (in out) :: wts(:)
 
-        integer:: itermax
-        integer:: i
-        integer:: iter
-        integer:: j
-        integer:: nlat
-        integer:: nprec
+        integer (ip) :: itermax
+        integer (ip) :: i
+        integer (ip) :: iter
+        integer (ip) :: j
+        integer (ip) :: nlat
+        integer (ip) :: nprec
         real (wp):: pi
         real (wp):: pp
         real (wp):: p1
@@ -178,15 +182,15 @@ contains
         real (wp):: ten
 
 
-        ten = 10.d0
+        ten = 10.0_wp
         converg = ten * epsilon(ten)
 
         nprec = precision(converg)
-        converg = .1**nprec
+        converg = 0.1_wp**nprec
 
         itermax = 10
 
-        pi = acos(-1.0)
+        pi = acos(-1.0_wp)
 
         nlat = size(sinlats)
         if (size(sinlats) /= size(wts)) then
@@ -195,18 +199,18 @@ contains
         end if
 
         do i=1,nlat
-            z = cos(pi*(i - 0.25)/(nlat + 0.5))
+            z = cos(pi*(real(i, kind=wp) - 0.25_wp)/(real(nlat, kind=wp) + 0.5_wp))
             do iter=1,itermax
-                p1 = 1.0
-                p2 = 0.0
+                p1 = 1.0_wp
+                p2 = 0.0_wp
 
                 do j=1,nlat
                     p3 = p2
                     p2 = p1
-                    p1 = ((2.0*j - 1.0)*z*p2 - (j - 1.0)*p3)/j
+                    p1 = ((2.0_wp*j - 1.0_wp)*z*p2 - (j - 1.0_wp)*p3)/j
                 end do
 
-                pp = nlat*(z*p1 - p2)/(z*z - 1.0e+00)
+                pp = nlat*(z*p1 - p2)/(z*z - 1.0e+0_wp)
                 z1 = z
                 z  = z1 - p1/pp
                 if(abs(z - z1) < converg) go to 10
@@ -242,19 +246,19 @@ subroutine LEGend(x,pmn,hmn)
     !     POLYNOMIALS, C. 1962, FOR INFORMATION ON THE ACCURATE
     !     COMPUTATION OF ASSOCIATED LEGendRE FUNCTIONS.
 
-    real, dimension(:), intent(in out) ::  pmn
-    real, dimension(:), intent(in out) ::  hmn
+    real (wp), dimension(:), intent(in out) ::  pmn
+    real (wp), dimension(:), intent(in out) ::  hmn
     real (wp), intent(in) :: x
-    integer:: m
-    integer::n
-    integer::nm
-    integer::i
-    integer::nmax
-    integer::np1
-    integer::nmstrt
-    integer::j
-    integer::nmdim
-    integer::ntrunc
+    integer (ip) :: m
+    integer (ip) ::n
+    integer (ip) ::nm
+    integer (ip) ::i
+    integer (ip) ::nmax
+    integer (ip) ::np1
+    integer (ip) ::nmstrt
+    integer (ip) ::j
+    integer (ip) ::nmdim
+    integer (ip) ::ntrunc
     real (wp):: a
     real (wp):: b
     real (wp):: prod
@@ -271,14 +275,14 @@ subroutine LEGend(x,pmn,hmn)
     !**** SET PARAMETERS FOR ENTRY INTO THE RECURSIVE FORMULAE.
 
 
-    sinsq = 1.D0 - x * x
+    sinsq = 1.0_wp - x * x
 
-    a     = 1.D0
-    b     = 0.D0
-    prod  = 1.D0
+    a     = 1.0_wp
+    b     = 0.0_wp
+    prod  = 1.0_wp
 
     nmdim = size(pmn)
-    ntrunc = nint((-1.+sqrt(1+8*float(nmdim)))/2.)-1
+    ntrunc = nint((-1.0_wp + sqrt(1.0_wp + 8.0_wp*real(nmdim, kind=wp)))/2.0_wp, kind=ip)-1
     if (size(pmn) /= size(hmn)) then
         print *, 'pnm and hnm must be same size in subroutine legend!'
         stop
@@ -296,14 +300,14 @@ subroutine LEGend(x,pmn,hmn)
         !        GENERATED.
 
         if (m /= 0) then
-            a    = a + 2.D0
-            b    = b + 2.D0
+            a    = a + 2.0_wp
+            b    = b + 2.0_wp
             prod = prod * sinsq * a / b
         end if
 
         !****    GENERATE PMN AND HMN FOR J = 1 AND 2.
 
-        pmnjm2   = SQRT(0.5D0 * prod)
+        pmnjm2   = SQRT(0.5_wp * prod)
         nm = nmstrt + 1
         pmn(nm) = pmnjm2
 
@@ -352,18 +356,18 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
 
     class (GaussianSphericalHarmonic), intent(in) :: this
 
-    real, dimension(this%nlons,this%nlats), intent(in out) :: data
-    real, dimension(this%nlats*(this%nlons+2)) :: wrk1
-    real, dimension(this%nlats*(this%nlons+1)) :: wrk2
-    complex, dimension(this%ntrunc+1,this%nlats), intent(in out) :: coeff
-    integer::  nlons
-    integer::nlats
-    integer::ntrunc
-    integer::mwaves
-    integer::i
-    integer::j
-    integer::m
-    integer::n
+    real (wp), dimension(this%nlons,this%nlats), intent(in out) :: data
+    real (wp), dimension(this%nlats*(this%nlons+2)) :: wrk1
+    real (wp), dimension(this%nlats*(this%nlons+1)) :: wrk2
+    complex (wp), intent(in out) :: coeff(this%ntrunc+1,this%nlats)
+    integer (ip) ::  nlons
+    integer (ip) ::nlats
+    integer (ip) ::ntrunc
+    integer (ip) ::mwaves
+    integer (ip) ::i
+    integer (ip) ::j
+    integer (ip) ::m
+    integer (ip) ::n
     integer (ip), intent(in) :: idir
 
     if (.not. this%initialized) then
@@ -391,11 +395,11 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
             !    transforms are computed pairwise using a complex fft.
     		
             n = 0
-            wrk1 = 0.
+            wrk1 = 0.0_wp
             do j=1,nlats
                 do i=1,nlons+2
                     n = n + 1
-                    wrk1(n) = 0.0
+                    wrk1(n) = 0.0_wp
                     if (i <= nlons) then
                         wrk1(n) = data(i,j)
                     end if
@@ -409,19 +413,19 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
                 do m=1,(nlons/2)+1
                     n = n + 2
                     if (m <= mwaves) then
-                        coeff(m,j) = cmplx(wrk1(n),wrk1(n+1))
+                        coeff(m,j) = cmplx(wrk1(n),wrk1(n+1), kind=wp)
                     end if
                 end do
             end do
         case (-1)
     		
-            wrk1 = 0.
+            wrk1 = 0.0_wp
             n = -1
             do j=1,nlats
                 do m=1,(nlons/2)+1
                     n = n + 2
                     if (m <= mwaves) then
-                        wrk1(n) = real(coeff(m,j))
+                        wrk1(n) = real(coeff(m,j), kind=wp)
                         wrk1(n+1) = aimag(coeff(m,j))
                     end if
                 end do
@@ -452,17 +456,17 @@ subroutine spharm(this, ugrid, anm, idir)
 
     class (GaussianSphericalHarmonic), intent(in) :: this
 
-    real, dimension(this%nlons,this%nlats), intent(in out) :: ugrid
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in out) :: anm
-    complex, dimension(this%ntrunc+1,this%nlats) :: am
-    integer::  nlats
-    integer::ntrunc
-    integer::mwaves
-    integer::nmstrt
-    integer::nm
-    integer::m
-    integer::n
-    integer::j
+    real (wp)    :: ugrid(this%nlons,this%nlats)
+    complex (wp) :: anm((this%ntrunc+1)*(this%ntrunc+2)/2)
+    complex (wp) :: am(this%ntrunc+1,this%nlats)
+    integer (ip) :: nlats
+    integer (ip) ::ntrunc
+    integer (ip) ::mwaves
+    integer (ip) ::nmstrt
+    integer (ip) ::nm
+    integer (ip) ::m
+    integer (ip) ::n
+    integer (ip) ::j
     integer (ip), intent(in) :: idir
 
     if (.not. this%initialized) then
@@ -511,7 +515,7 @@ subroutine spharm(this, ugrid, anm, idir)
     		
                 nmstrt = 0
                 do m = 1, mwaves
-                    am(m,j) = cmplx(0., 0.)
+                    am(m,j) = cmplx(0.0_wp, 0.0_wp, kind=wp)
                     do n = 1, mwaves-m+1
                         nm = nmstrt + n
                         am(m,j) = am(m,j)  +  anm(nm) * this%pnm(nm,j)
@@ -538,21 +542,21 @@ subroutine getuv(this,vrtnm,divnm,ug,vg)
     ! (spectral coeffs of vorticity and divergence).
 
     class (GaussianSphericalHarmonic), intent(in) :: this
-    real, dimension(this%nlons,this%nlats), intent(out) ::  ug
-    real, dimension(this%nlons,this%nlats), intent(out) ::vg
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: vrtnm
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) ::divnm
-    complex, dimension(this%ntrunc+1,this%nlats)  :: um
-    complex, dimension(this%ntrunc+1,this%nlats)  ::vm
-    integer:: nlats
-    integer::ntrunc
-    integer::mwaves
-    integer::m
-    integer::j
-    integer::n
-    integer::nm
-    integer::nmstrt
-    real::  rm
+    real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
+    real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
+    complex (wp), intent(in) :: vrtnm((this%ntrunc+1)*(this%ntrunc+2)/2)
+    complex (wp), intent(in) ::divnm((this%ntrunc+1)*(this%ntrunc+2)/2)
+    complex (wp) :: um(this%ntrunc+1,this%nlats)
+    complex (wp) ::vm(this%ntrunc+1,this%nlats)
+    integer (ip) :: nlats
+    integer (ip) ::ntrunc
+    integer (ip) ::mwaves
+    integer (ip) ::m
+    integer (ip) ::j
+    integer (ip) ::n
+    integer (ip) ::nm
+    integer (ip) ::nmstrt
+    real (wp) ::  rm
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in getuv!'
@@ -568,15 +572,15 @@ subroutine getuv(this,vrtnm,divnm,ug,vg)
         nmstrt = 0
         do m=1,mwaves
             rm = m-1
-            um(m,j) = cmplx(0.,0.)
-            vm(m,j) = cmplx(0.,0.)
+            um(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
+            vm(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
             do n=1,mwaves-m+1
                 nm = nmstrt + n
-                um(m,j) = um(m,j) + (this%ilap(nm)/this%rsphere)*( &
-                    cmplx(0.,rm)*divnm(nm)*this%pnm(nm,j) + &
+                um(m,j) = um(m,j) + (this%ilap(nm)/this%RADIUS_OF_SPHERE)*( &
+                    cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*this%pnm(nm,j) + &
                     vrtnm(nm)*this%hnm(nm,j) )
-                vm(m,j) = vm(m,j) + (this%ilap(nm)/this%rsphere)*( &
-                    cmplx(0.,rm)*vrtnm(nm)*this%pnm(nm,j) - &
+                vm(m,j) = vm(m,j) + (this%ilap(nm)/this%RADIUS_OF_SPHERE)*( &
+                    cmplx(0.0,rm, kind=wp)*vrtnm(nm)*this%pnm(nm,j) - &
                     divnm(nm)*this%hnm(nm,j) )
             end do
             nmstrt = nmstrt + mwaves-m+1
@@ -595,12 +599,12 @@ subroutine getvrtdiv(this,vrtnm,divnm,ug,vg)
 
     class (GaussianSphericalHarmonic), intent(in) :: this
 
-    real, dimension(this%nlons,this%nlats), intent(in out) ::  ug
-    real, dimension(this%nlons,this%nlats), intent(in out) ::vg
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: vrtnm
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) ::divnm
-    complex, dimension(this%ntrunc+1,this%nlats) :: um
-    complex, dimension(this%ntrunc+1,this%nlats) ::vm
+    real (wp), dimension(this%nlons,this%nlats), intent(in out) ::  ug
+    real (wp), dimension(this%nlons,this%nlats), intent(in out) ::vg
+    complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: vrtnm
+    complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) ::divnm
+    complex (wp), dimension(this%ntrunc+1,this%nlats) :: um
+    complex (wp), dimension(this%ntrunc+1,this%nlats) ::vm
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in getvrtdiv!'
@@ -635,20 +639,20 @@ subroutine sumnm(this,am,bm,anm,isign1,isign2)
 
     integer (ip), intent(in) :: isign1
     integer (ip), intent(in) ::isign2
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: anm
-    complex, dimension(this%ntrunc+1,this%nlats), intent(in) :: am
-    complex, dimension(this%ntrunc+1,this%nlats), intent(in) ::bm
-    integer:: nlats
-    integer::ntrunc
-    integer::mwaves
-    integer::j
-    integer::m
-    integer::n
-    integer::nm
-    integer::nmstrt
-    real::  sign1
-    real::sign2
-    real::rm
+    complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: anm
+    complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) :: am
+    complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) ::bm
+    integer (ip) :: nlats
+    integer (ip) ::ntrunc
+    integer (ip) ::mwaves
+    integer (ip) ::j
+    integer (ip) ::m
+    integer (ip) ::n
+    integer (ip) ::nm
+    integer (ip) ::nmstrt
+    real (wp) ::  sign1
+    real (wp) ::sign2
+    real (wp) ::rm
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in sumnm!'
@@ -656,8 +660,8 @@ subroutine sumnm(this,am,bm,anm,isign1,isign2)
     end if
 
 
-    sign1 = float(isign1)
-    sign2 = float(isign2)
+    sign1 = real(isign1, kind=wp)
+    sign2 = real(isign2, kind=wp)
     if (isign2 /= 1 .and. isign2 /= -1) then
         print *, ' isign2 must be +1 or -1 in sumnm!'
         print *, ' execution terminated in sumnm'
@@ -678,9 +682,9 @@ subroutine sumnm(this,am,bm,anm,isign1,isign2)
             rm = m-1
             do n   = 1, mwaves-m+1
                 nm = nmstrt + n
-                anm(nm) = aNM(nm) + sign1*this%GWrC(j)*(CMPLX(0.,rm) &
-                    * this%PNM(nm,j) * am(m,j) &
-                    + sign2 * this%HNM(nm,j) * bm(m,j))
+                anm(nm) = anm(nm) + sign1*this%gwrc(j)*(cmplx(0.0_wp,rm,kind=wp) &
+                    * this%pnm(nm,j) * am(m,j) &
+                    + sign2 * this%hnm(nm,j) * bm(m,j))
             end do
             nmstrt = nmstrt + mwaves - m +1
         end do
@@ -695,20 +699,20 @@ subroutine cosgrad(this,divnm,ug,vg)
 
     class (GaussianSphericalHarmonic), intent(in) :: this
 
-    real, dimension(this%nlons,this%nlats), intent(out) ::  ug
-    real, dimension(this%nlons,this%nlats), intent(out) ::vg
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: divnm
-    complex, dimension(this%ntrunc+1,this%nlats) :: um
-    complex, dimension(this%ntrunc+1,this%nlats) ::vm
-    integer:: nlats
-    integer::ntrunc
-    integer::mwaves
-    integer::j
-    integer::m
-    integer::n
-    integer::nm
-    integer::nmstrt
-    real:: rm
+    real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
+    real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
+    complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: divnm
+    complex (wp), dimension(this%ntrunc+1,this%nlats) :: um
+    complex (wp), dimension(this%ntrunc+1,this%nlats) ::vm
+    integer (ip) :: nlats
+    integer (ip) ::ntrunc
+    integer (ip) ::mwaves
+    integer (ip) ::j
+    integer (ip) ::m
+    integer (ip) ::n
+    integer (ip) ::nm
+    integer (ip) ::nmstrt
+    real (wp) :: rm
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in cosgrad!'
@@ -724,13 +728,13 @@ subroutine cosgrad(this,divnm,ug,vg)
         nmstrt = 0
         do m=1,mwaves
             rm = (m-1)
-            um(m,j) = cmplx(0.,0.)
-            vm(m,j) = cmplx(0.,0.)
+            um(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
+            vm(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
             do n=1,mwaves-m+1
                 nm = nmstrt + n
-                um(m,j) = um(m,j) + (1./this%rsphere)* &
-                    cmplx(0.,rm)*divnm(nm)*this%pnm(nm,j)
-                vm(m,j) = vm(m,j) - (1./this%rsphere)* &
+                um(m,j) = um(m,j) + (1./this%RADIUS_OF_SPHERE)* &
+                    cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*this%pnm(nm,j)
+                vm(m,j) = vm(m,j) - (1./this%RADIUS_OF_SPHERE)* &
                     divnm(nm)*this%hnm(nm,j)
             end do
             nmstrt = nmstrt + mwaves - m +1
@@ -749,12 +753,12 @@ subroutine specsmooth(this,datagrid,smooth)
     ! function of degree (this%indxn).
 
     class (GaussianSphericalHarmonic), intent(in) :: this
-    real, dimension(this%nlons,this%nlats), intent(in out) :: datagrid
-    real, dimension(this%ntrunc+1), intent(in) :: smooth
-    complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: dataspec
-    integer:: n
-    integer::nm
-    integer::nmdim
+    real (wp), dimension(this%nlons,this%nlats), intent(in out) :: datagrid
+    real (wp), dimension(this%ntrunc+1), intent(in) :: smooth
+    complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: dataspec
+    integer (ip) :: n
+    integer (ip) ::nm
+    integer (ip) ::nmdim
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in specsmooth!'

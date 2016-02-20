@@ -73,34 +73,108 @@ program test_spharmt
     integer (ip), parameter :: nlat=nlon/2
     integer (ip), parameter :: ntrunc=42
     integer (ip), parameter :: nmdim = (ntrunc+1)*(ntrunc+2)/2
-    complex, dimension(nmdim) :: vrtnm,divnm,pnm,scrnm
-    complex, dimension(nmdim,3) :: dvrtdtnm,ddivdtnm,dpdtnm
-    complex, dimension(ntrunc+1,nlat) :: scrm1,scrm2
-    real, dimension(nlon,nlat) :: uxact,vxact,pxact,u,v,p,f, &
-        coslat,ug,vg,pg,vrtg,divg,scrg1,scrg2
-    integer itmax,mprint,nl,nlm1,nlm2,i,j,ncycle,&
-        nsav1,nsav2,nold,nnow,nnew
-    real lambda,lhat,phlt(361),uhat,aa,uzero,pzero,pi,hpi,dtr,omega,alphad,&
-        alpha,fzero,dt,cfn,dlath,theta,sth,cth,ca,sa,dlam,st,ct,cthclh,cthslh,&
-        clh,time,that,sl,slh,evmax,epmax,dvmax,dpmax,htime,dvgm,cl,v2max,p2max,&
-        vmax,pmax
-    type (GaussianSphericalHarmonic) :: this
+    complex (wp), dimension(nmdim) :: vrtnm
+    complex (wp), dimension(nmdim) ::divnm
+    complex (wp), dimension(nmdim) ::pnm
+    complex (wp), dimension(nmdim) ::scrnm
+    complex (wp), dimension(nmdim,3) :: dvrtdtnm
+    complex (wp), dimension(nmdim,3) ::ddivdtnm
+    complex (wp), dimension(nmdim,3) ::dpdtnm
+    complex (wp), dimension(ntrunc+1,nlat) :: scrm1
+    complex (wp), dimension(ntrunc+1,nlat) ::scrm2
+    real (wp), dimension(nlon,nlat) :: uxact
+    real (wp), dimension(nlon,nlat) ::vxact
+    real (wp), dimension(nlon,nlat) ::pxact
+    real (wp), dimension(nlon,nlat) ::u
+    real (wp), dimension(nlon,nlat) ::v
+    real (wp), dimension(nlon,nlat) ::p
+    real (wp), dimension(nlon,nlat) ::f
+    real (wp), dimension(nlon,nlat) :: &
+        coslat
+    real (wp), dimension(nlon,nlat) ::ug
+    real (wp), dimension(nlon,nlat) ::vg
+    real (wp), dimension(nlon,nlat) ::pg
+    real (wp), dimension(nlon,nlat) ::vrtg
+    real (wp), dimension(nlon,nlat) ::divg
+    real (wp), dimension(nlon,nlat) ::scrg1
+    real (wp), dimension(nlon,nlat) ::scrg2
+    integer (ip)::  itmax
+    integer (ip)::mprint
+    integer (ip)::nl
+    integer (ip)::nlm1
+    integer (ip)::nlm2
+    integer (ip)::i
+    integer (ip)::j
+    integer (ip)::ncycle
+    integer (ip)::&
+        nsav1
+    integer (ip)::nsav2
+    integer (ip)::nold
+    integer (ip)::nnow
+    integer (ip)::nnew
+    real (wp):: lambda
+    real (wp)::lhat
+    real (wp)::phlt(361)
+    real (wp)::uhat
+    real (wp)::aa
+    real (wp)::uzero
+    real (wp)::pzero
+    real (wp)::pi
+    real (wp)::hpi
+    real (wp)::dtr
+    real (wp)::omega
+    real (wp)::alphad
+    real (wp)::&
+        alpha
+    real (wp)::fzero
+    real (wp)::dt
+    real (wp)::cfn
+    real (wp)::dlath
+    real (wp)::theta
+    real (wp)::sth
+    real (wp)::cth
+    real (wp)::ca
+    real (wp)::sa
+    real (wp)::dlam
+    real (wp)::st
+    real (wp)::ct
+    real (wp)::cthclh
+    real (wp)::cthslh
+    real (wp)::&
+        clh
+    real (wp)::time
+    real (wp)::that
+    real (wp)::sl
+    real (wp)::slh
+    real (wp)::evmax
+    real (wp)::epmax
+    real (wp)::dvmax
+    real (wp)::dpmax
+    real (wp)::htime
+    real (wp)::dvgm
+    real (wp)::cl
+    real (wp)::v2max
+    real (wp)::p2max
+    real (wp)::&
+        vmax
+    real (wp)::pmax
+    type (GaussianSphericalHarmonic):: this
 
     print *,'triangular trunction T',ntrunc
     print *,nlat,' gaussian latitudes'
-    pi = 4.*atan(1.)
+    pi = acos( -1.0_wp )
     hpi = pi/2.
     dtr = pi/180.
-    aa = 6.37122e6
+    aa = 6.37122e+6
     omega = 7.292e-5
     fzero = omega+omega
     uzero = 40.
-    pzero = 2.94e4
+    pzero = 2.94e+4
     alphad = 60.
     alpha = dtr*alphad
 
     dt = 300.
-    itmax = nint(86400.*5./dt)
+    itmax = nint(86400.*5./dt, kind=ip)
     mprint = itmax/10
 
 
@@ -335,12 +409,17 @@ program test_spharmt
 
 contains
 
-    real function ui(amp,thetad)
+    real (wp) function ui(amp,thetad)
         !
         !     computes the initial unrotated longitudinal velocity
         !     see section 3.3.
         !
-        real amp, thetad, thetab, thetae, xe, x
+        real (wp):: amp
+        real (wp):: thetad
+        real (wp):: thetab
+        real (wp):: thetae
+        real (wp):: xe
+        real (wp):: x
         thetab=-pi/6.
         thetae= pi/2.
         xe=3.e-1
@@ -350,8 +429,9 @@ contains
         ui=amp*exp(-1./x-1./(xe-x)+4./xe)
     end function ui
 
-    real function atanxy(x,y)
-        real x,y
+    real (wp) function atanxy(x,y)
+        real (wp):: x
+        real (wp)::y
         atanxy = 0.
         if(x==0. .and. y==0.) return
         atanxy = atan2(y,x)
@@ -359,8 +439,12 @@ contains
 
     subroutine sine(n,x)
         !     computes the sine transform
-        integer n,i,j
-        real x(n),w(n),arg
+        integer (ip)::  n
+        integer (ip)::i
+        integer (ip)::j
+        real (wp):: x(n)
+        real (wp)::w(n)
+        real (wp)::arg
         arg = 4.*atan(1.)/(n+1)
         do j=1,n
             w(j) = 0.
@@ -373,10 +457,12 @@ contains
         enddo
     end subroutine sine
 
-    real function cosine(theta,n,cf)
+    real (wp) function cosine(theta,n,cf)
         !     computes the cosine transform
-        integer n,i
-        real cf(n), theta
+        integer (ip):: n
+        integer (ip)::i
+        real (wp):: cf(n)
+        real (wp):: theta
         cosine = 0.
         do i=1,n
             cosine = cosine+cf(i)*cos(i*theta)

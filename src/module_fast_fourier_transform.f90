@@ -240,9 +240,9 @@ contains
         integer (ip), intent(in)    ::lot
         integer (ip), intent(in)    ::isign
         integer (ip), intent(in) :: ifax(:)
-        real,    intent(in)    :: trigs(:)
-        real,    intent(in out) :: a(*)
-        real,    intent(in out) ::work(*)
+        real (wp),    intent(in)    :: trigs(:)
+        real (wp),    intent(in out) :: a(*)
+        real (wp),    intent(in out) ::work(*)
 
         !     dimension a(n),work(n),trigs(n),ifax(1)
         !
@@ -287,21 +287,21 @@ contains
         !               b(k)=-(1/n)*sum(j=0,...,n-1)(x(j)*sin(2*j*k*pi/n))
         !
 
-        integer:: nfax
-        integer:: nx
-        integer:: nh
-        integer:: ink
-        integer:: igo
-        integer:: ibase
-        integer:: jbase
-        integer:: i
-        integer:: j
-        integer:: k
-        integer:: l
-        integer:: m
-        integer:: ia
-        integer:: la
-        integer:: ib
+        integer (ip) :: nfax
+        integer (ip) :: nx
+        integer (ip) :: nh
+        integer (ip) :: ink
+        integer (ip) :: igo
+        integer (ip) :: ibase
+        integer (ip) :: jbase
+        integer (ip) :: i
+        integer (ip) :: j
+        integer (ip) :: k
+        integer (ip) :: l
+        integer (ip) :: m
+        integer (ip) :: ia
+        integer (ip) :: la
+        integer (ip) :: ib
 
         nfax=ifax(1)
         nx=n+1
@@ -405,30 +405,30 @@ subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    ::jump
     integer (ip), intent(in)    ::n
     integer (ip), intent(in)    ::lot
-    real,    intent(in)    :: trigs(:)
-    real,    intent(in out) :: a(*)
-    real,    intent(in out) ::work(*)
+    real (wp),    intent(in)    :: trigs(:)
+    real (wp),    intent(in out) :: a(*)
+    real (wp),    intent(in out) ::work(*)
 
     !     dimension a(n),work(n),trigs(n)
     !
     !     subroutine fft99a - preprocessing step for fft99, isign=+1
     !     (spectral to gridpoint transform)
 
-    integer:: nh
-    integer:: nx
-    integer:: ink
-    integer:: k
-    integer:: l
-    integer:: ia
-    integer:: ib
-    integer:: ja
-    integer:: jb
-    integer:: iabase
-    integer:: ibbase
-    integer:: jabase
-    integer:: jbbase
-    real:: c
-    real:: s
+    integer (ip) :: nh
+    integer (ip) :: nx
+    integer (ip) :: ink
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: ia
+    integer (ip) :: ib
+    integer (ip) :: ja
+    integer (ip) :: jb
+    integer (ip) :: iabase
+    integer (ip) :: ibbase
+    integer (ip) :: jabase
+    integer (ip) :: jbbase
+    real (wp) :: c
+    real (wp) :: s
 
     nh=n/2
     nx=n+1
@@ -486,8 +486,8 @@ subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
         ia=iabase
         ja=jabase
         do l=1,lot
-            work(ja)=2.0*a(ia)
-            work(ja+1)=-2.0*a(ia+inc)
+            work(ja)=2.0_wp*a(ia)
+            work(ja+1)=-2.0_wp*a(ia+inc)
             ia=ia+jump
             ja=ja+nx
         end do
@@ -502,47 +502,47 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    ::jump
     integer (ip), intent(in)    ::n
     integer (ip), intent(in)    ::lot
-    real,    intent(in)    :: trigs(:)
-    real,    intent(in out) :: a(*)
-    real,    intent(in out) ::work(*)
+    real (wp),    intent(in)    :: trigs(:)
+    real (wp),    intent(in out) :: a(*)
+    real (wp),    intent(in out) ::work(*)
 
     !     dimension work(n),a(n),trigs(n)
     !
     !     subroutine fft99b - postprocessing step for fft99, isign=-1
     !     (gridpoint to spectral transform)
 
-    integer:: nh
-    integer:: nx
-    integer:: ink
-    integer:: k
-    integer:: l
-    integer:: ia
-    integer:: ib
-    integer:: ja
-    integer:: jb
-    integer:: iabase
-    integer:: ibbase
-    integer:: jabase
-    integer:: jbbase
-    real:: scale
-    real:: c
-    real:: s
+    integer (ip) :: nh
+    integer (ip) :: nx
+    integer (ip) :: ink
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: ia
+    integer (ip) :: ib
+    integer (ip) :: ja
+    integer (ip) :: jb
+    integer (ip) :: iabase
+    integer (ip) :: ibbase
+    integer (ip) :: jabase
+    integer (ip) :: jbbase
+    real (wp) :: scale_constant
+    real (wp) :: c
+    real (wp) :: s
 
     nh=n/2
     nx=n+1
     ink=inc+inc
 
     !   a(0) and a(n/2)
-    scale=1.0/real(n)
+    scale_constant=1.0_wp/real(n, kind=wp)
     ia=1
     ib=2
     ja=1
     jb=n*inc+1
     do l=1,lot
-        a(ja)=scale*(work(ia)+work(ib))
-        a(jb)=scale*(work(ia)-work(ib))
-        a(ja+inc)=0.0
-        a(jb+inc)=0.0
+        a(ja)=scale_constant*(work(ia)+work(ib))
+        a(jb)=scale_constant*(work(ia)-work(ib))
+        a(ja+inc)=0.0_wp
+        a(jb+inc)=0.0_wp
         ia=ia+nx
         ib=ib+nx
         ja=ja+jump
@@ -550,7 +550,7 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     end do
 
     !   remaining wavenumbers
-    scale=0.5*scale
+    scale_constant=0.5_wp*scale_constant
     iabase=3
     ibbase=n-1
     jabase=2*inc+1
@@ -564,13 +564,13 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
         c=trigs(n+k)
         s=trigs(n+k+1)
         do l=1,lot
-            a(ja)=scale*((work(ia)+work(ib)) &
+            a(ja)=scale_constant*((work(ia)+work(ib)) &
                 +(c*(work(ia+1)+work(ib+1))+s*(work(ia)-work(ib))))
-            a(jb)=scale*((work(ia)+work(ib)) &
+            a(jb)=scale_constant*((work(ia)+work(ib)) &
                 -(c*(work(ia+1)+work(ib+1))+s*(work(ia)-work(ib))))
-            a(ja+inc)=scale*((c*(work(ia)-work(ib))-s*(work(ia+1)+work(ib+1))) &
+            a(ja+inc)=scale_constant*((c*(work(ia)-work(ib))-s*(work(ia+1)+work(ib+1))) &
                 +(work(ib+1)-work(ia+1)))
-            a(jb+inc)=scale*((c*(work(ia)-work(ib))-s*(work(ia+1)+work(ib+1))) &
+            a(jb+inc)=scale_constant*((c*(work(ia)-work(ib))-s*(work(ia+1)+work(ib+1))) &
                 -(work(ib+1)-work(ia+1)))
             ia=ia+nx
             ib=ib+nx
@@ -587,10 +587,10 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     if (iabase == ibbase) then
         ia=iabase
         ja=jabase
-        scale=2.0*scale
+        scale_constant=2.0_wp*scale_constant
         do l=1,lot
-            a(ja)=scale*work(ia)
-            a(ja+inc)=-scale*work(ia+1)
+            a(ja)=scale_constant*work(ia)
+            a(ja+inc)=-scale_constant*work(ia+1)
             ia=ia+nx
             ja=ja+jump
         end do
@@ -607,9 +607,9 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     integer (ip), intent(in)    ::lot
     integer (ip), intent(in)    ::isign
     integer (ip), intent(in) :: ifax(:)
-    real,    intent(in)    :: trigs(:)
-    real,    intent(in out) :: a(*)
-    real,    intent(in out) ::work(*)
+    real (wp),    intent(in)    :: trigs(:)
+    real (wp),    intent(in out) :: a(*)
+    real (wp),    intent(in out) ::work(*)
 
     !     dimension a(n),work(n),trigs(n),ifax(1)
     !
@@ -657,21 +657,21 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !               b(k)=-(1/n)*sum(j=0,...,n-1)(x(j)*sin(2*j*k*pi/n))
     !
 
-    integer:: nfax
-    integer:: nx
-    integer:: nh
-    integer:: ink
-    integer:: igo
-    integer:: ibase
-    integer:: jbase
-    integer:: i
-    integer:: j
-    integer:: k
-    integer:: l
-    integer:: m
-    integer:: ia
-    integer:: la
-    integer:: ib
+    integer (ip) :: nfax
+    integer (ip) :: nx
+    integer (ip) :: nh
+    integer (ip) :: ink
+    integer (ip) :: igo
+    integer (ip) :: ibase
+    integer (ip) :: jbase
+    integer (ip) :: i
+    integer (ip) :: j
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: m
+    integer (ip) :: ia
+    integer (ip) :: la
+    integer (ip) :: ib
 
 
     nfax=ifax(1)
@@ -750,8 +750,8 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
    !   fill in zeros at end
    ib=n*inc+1
    do l=1,lot
-       a(ib)=0.0
-       a(ib+inc)=0.0
+       a(ib)=0.0_wp
+       a(ib+inc)=0.0_wp
        ib=ib+jump
    end do
    go to 140
@@ -771,7 +771,7 @@ end subroutine perform_fft991
 subroutine initialize_fft99 (trigs, ifax, n)
     integer (ip), intent(in)  :: n
     integer (ip), intent(out) :: ifax(:)
-    real,    intent(out) :: trigs(:)
+    real (wp),    intent(out) :: trigs(:)
 
     !     dimension ifax(13),trigs(1)
     !
@@ -780,8 +780,8 @@ subroutine initialize_fft99 (trigs, ifax, n)
     ! documentation of the details were not available when this routine
     ! was written.
     !
-    integer:: mode = 3
-    integer:: i
+    integer (ip) :: mode = 3
+    integer (ip) :: i
 
     call fax (ifax, n, mode)
     i = ifax(1)
@@ -801,15 +801,15 @@ subroutine fax (ifax,n,mode)
     integer (ip), intent(in)  :: n
     integer (ip), intent(in)  :: mode
 
-    integer:: nn
-    integer:: k
-    integer:: l
-    integer:: inc
-    integer:: nfax
-    integer:: ii
-    integer:: istop
-    integer:: i
-    integer:: item
+    integer (ip) :: nn
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: inc
+    integer (ip) :: nfax
+    integer (ip) :: ii
+    integer (ip) :: istop
+    integer (ip) :: i
+    integer (ip) :: item
 
     nn=n
     if (iabs(mode) == 1) go to 10
@@ -873,58 +873,58 @@ end subroutine fax
 !##########################################################################
 
 subroutine fftrig (trigs,n,mode)
-    real,    intent(out) :: trigs(:)
+    real (wp),    intent(out) :: trigs(:)
     integer (ip), intent(in)  :: n
     integer (ip), intent(in)  :: mode
 
-    real:: del
-    real:: angle
-    real::pi
-    integer:: imode
-    integer:: nn
-    integer:: nh
-    integer:: i
-    integer:: l
-    integer:: la
+    real (wp) :: del
+    real (wp) :: angle
+    real (wp) ::pi
+    integer (ip) :: imode
+    integer (ip) :: nn
+    integer (ip) :: nh
+    integer (ip) :: i
+    integer (ip) :: l
+    integer (ip) :: la
 
-    pi = 4.*atan(1.0)
+    pi = acos( -1.0_wp)
     imode=iabs(mode)
     nn=n
     if (imode>1.and.imode<6) nn=n/2
-    del=(pi+pi)/real(nn)
+    del=(pi+pi)/real(nn, kind=wp)
     l=nn+nn
     do i=1,l,2
-        angle=0.5*real(i-1)*del
+        angle=0.5_wp*real(i-1, kind=wp)*del
         trigs(i)=cos(angle)
         trigs(i+1)=sin(angle)
     end do
     if (imode == 1) return
     if (imode == 8) return
 
-    del=0.5*del
+    del=0.5_wp*del
     nh=(nn+1)/2
     l=nh+nh
     la=nn+nn
     do i=1,l,2
-        angle=0.5*real(i-1)*del
+        angle=0.5_wp*real(i-1,kind=wp)*del
         trigs(la+i)=cos(angle)
         trigs(la+i+1)=sin(angle)
     end do
     if (imode<=3) return
 
-    del=0.5*del
+    del=0.5_wp*del
     la=la+nn
     if (mode/=5) then
         do i=2,nn
-            angle=real(i-1)*del
+            angle=real(i-1,kind=wp)*del
             trigs(la+i)=2.0*sin(angle)
         end do
         return
     end if
 
-    del=0.5*del
+    del=0.5_wp*del
     do i=2,n
-        angle=real(i-1)*del
+        angle=real(i-1,kind=wp)*del
         trigs(la+i)=sin(angle)
     end do
 
@@ -941,11 +941,11 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     integer (ip), intent(in)  :: n
     integer (ip), intent(in)  :: ifac
     integer (ip), intent(in)  :: la
-    real,    intent(in)  :: a(n)
-    real,    intent(in)  ::b(n)
-    real,    intent(in)  ::trigs(n)
-    real,    intent(out) :: c(n)
-    real,    intent(out) ::d(n)
+    real (wp),    intent(in)  :: a(n)
+    real (wp),    intent(in)  ::b(n)
+    real (wp),    intent(in)  ::trigs(n)
+    real (wp),    intent(out) :: c(n)
+    real (wp),    intent(out) ::d(n)
     !
     !     subroutine "vpassm" - multiple version of "vpassa"
     !     performs one pass through data
@@ -965,47 +965,47 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     !     la is product of previous factors
     !
 
-    real:: sin36=0.587785252292473
-    real:: cos36=0.809016994374947
-    real:: sin72=0.951056516295154
-    real:: cos72=0.309016994374947424102293417182819058860154589902881431067
-    real:: sin60=0.866025403784438646763723170752936183471402626905190314027
+    real (wp) :: sin36=0.587785252292473
+    real (wp) :: cos36=0.809016994374947
+    real (wp) :: sin72=0.951056516295154
+    real (wp) :: cos72=0.309016994374947424102293417182819058860154589902881431067
+    real (wp) :: sin60=0.866025403784438646763723170752936183471402626905190314027
 
-    integer:: i
-    integer:: j
-    integer:: k
-    integer:: l
-    integer:: m
-    integer:: iink
-    integer:: jink
-    integer:: jump
-    integer:: ibase
-    integer:: jbase
-    integer:: igo
-    integer:: ijk
-    integer:: la1
-    integer:: ia
-    integer:: ja
-    integer:: ib
-    integer:: jb
-    integer:: kb
-    integer:: ic
-    integer:: jc
-    integer:: kc
-    integer:: id
-    integer:: jd
-    integer:: kd
-    integer:: ie
-    integer:: je
-    integer:: ke
-    real:: c1
-    real:: s1
-    real:: c2
-    real:: s2
-    real:: c3
-    real:: s3
-    real:: c4
-    real:: s4
+    integer (ip) :: i
+    integer (ip) :: j
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: m
+    integer (ip) :: iink
+    integer (ip) :: jink
+    integer (ip) :: jump
+    integer (ip) :: ibase
+    integer (ip) :: jbase
+    integer (ip) :: igo
+    integer (ip) :: ijk
+    integer (ip) :: la1
+    integer (ip) :: ia
+    integer (ip) :: ja
+    integer (ip) :: ib
+    integer (ip) :: jb
+    integer (ip) :: kb
+    integer (ip) :: ic
+    integer (ip) :: jc
+    integer (ip) :: kc
+    integer (ip) :: id
+    integer (ip) :: jd
+    integer (ip) :: kd
+    integer (ip) :: ie
+    integer (ip) :: je
+    integer (ip) :: ke
+    real (wp) :: c1
+    real (wp) :: s1
+    real (wp) :: c2
+    real (wp) :: s2
+    real (wp) :: c3
+    real (wp) :: s3
+    real (wp) :: c4
+    real (wp) :: s4
 
     m=n/ifac
     iink=m*inc1
@@ -1080,10 +1080,10 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 do 55 ijk=1,lot
                     c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                     d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
-                    c(jb+j)=(a(ia+i)-0.5*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))
-                    c(jc+j)=(a(ia+i)-0.5*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))
-                    d(jb+j)=(b(ia+i)-0.5*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i)))
-                    d(jc+j)=(b(ia+i)-0.5*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i)))
+                    c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))
+                    c(jc+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))
+                    d(jb+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i)))
+                    d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i)))
                     i=i+inc3
                     j=j+inc4
 55              continue
@@ -1107,17 +1107,17 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                         c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                         d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                         c(jb+j)=                                                           &
-                            c1*((a(ia+i)-0.5*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
-                            -s1*((b(ia+i)-0.5*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
+                            c1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
+                            -s1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
                         d(jb+j)=                                                           &
-                            s1*((a(ia+i)-0.5*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
-                            +c1*((b(ia+i)-0.5*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
+                            s1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
+                            +c1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
                         c(jc+j)=                                                           &
-                            c2*((a(ia+i)-0.5*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
-                            -s2*((b(ia+i)-0.5*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
+                            c2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
+                            -s2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
                         d(jc+j)=                                                           &
-                            s2*((a(ia+i)-0.5*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
-                            +c2*((b(ia+i)-0.5*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
+                            s2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
+                            +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
                         i=i+inc3
                         j=j+inc4
 65                  continue
