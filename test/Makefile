@@ -9,9 +9,9 @@ LINKS = \
 
 EXECUTABLE = ./test.exe
 
-test_spharmt.o: \
-test_spharmt.f90
-	$(FC) $(FFLAGS) -c test_spharmt.f90 $(LINKS)\
+test.o: \
+test.f90
+	$(FC) $(FFLAGS) -c test.f90 $(LINKS)\
 	 -o $(OBJ_DIRECTORY)/$@
 
 exec: $(OBJ)

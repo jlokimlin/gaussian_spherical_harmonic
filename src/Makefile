@@ -12,14 +12,14 @@ module_fast_fourier_transform.f90
 	$(FC) $(FFLAGS) -c module_fast_fourier_transform.f90 $(LINKS) \
 	 -o $(OBJ_DIRECTORY)/$@ -J$(LIB_DIRECTORY)
 
-spharmt.o: \
+type_GaussianSphericalHarmonic.o: \
 module_fast_fourier_transform.o \
-spharmt.f90
-	$(FC) $(FFLAGS) -c spharmt.f90 $(LINKS) \
+type_GaussianSphericalHarmonic.f90
+	$(FC) $(FFLAGS) -c type_GaussianSphericalHarmonic.f90 $(LINKS) \
 	 -o $(OBJ_DIRECTORY)/$@ -J$(LIB_DIRECTORY)
 
 main.o: \
-spharmt.o \
+type_GaussianSphericalHarmonic.o \
 main.f90
 	$(FC) $(FFLAGS) -c main.f90 $(LINKS) \
 	-o $(OBJ_DIRECTORY)/$@
