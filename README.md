@@ -1,29 +1,35 @@
-
- fortran95 spherical harmonic module.
+# Fortran 95 spherical harmonic module.
+ 
  For gaussian grids and triangular truncation only.
 
  version 1.1  9/30/2003 (second version - now all fortran using fft99)
  Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>
 
 -----------------------------------------------------------------------------
- to use this module, put "use spharmt" at top of main program
+ To use this module, put "use spharmt" at top of main program
  (just after program statement).
  to initialize arrays needed to compute spherical harmonic transforms
  at T(ntrunc) resolution on a nlon x nlat gaussian grid,
  do something like this:
 
+```fortran
+
  type (sphere) :: sphere_dat
  parameter (nlon=192,nlat=nlon/2)
  parameter (ntrunc=62)
  rsphere = 6.3712e6
+ 
  call spharmt_init(sphere_dat,nlon,nlat,ntrunc,re)
+
+
+```
 
  derived data type "sphere" contains stuff needed for legendre
  transforms and fft.  By creating multiple instances of sphere
  data types, spherical harmonic transforms on multiple grids can
  be done easily in the same code.
 
- Components of sphere derived data type are:
+### Components of sphere derived data type are:
 
  NLON (integer) - number of longitudes
  NLAT (integer) - number of latitudes
@@ -52,8 +58,7 @@
  ISINITIALIZED (logical) - true if derived data type has been
  initialized by call to spharm_init, false if not initialized.
 
-
- public routines:
+### Public routines:
 
  SPHARMT_INIT(sphere_dat,nlon,nlat,ntrunc,re):  initialize a sphere object
  (sphere_dat - derived data type "sphere"). inputs are nlon (number of unique
@@ -111,7 +116,7 @@
  data (nlon,nlat) contains gridded data, coeff (ntrunc+1,nlat) contains
  complex zonal fourier harmonics.
 
- Important Details:
+### Important Details:
 
  The gridded data is assumed to be oriented such that i=1 is the Greenwich
  meridian and j=1 is the northernmost point. Grid indices increase eastward
