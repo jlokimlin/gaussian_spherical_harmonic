@@ -1,5 +1,10 @@
 module module_fast_fourier_transform
 
+    use, intrinsic :: iso_fortran_env, only: &
+        wp     => REAL64, &
+        ip     => INT32, &
+        stderr => ERROR_UNIT
+
     ! Explicit typing only
     implicit none
 
@@ -229,12 +234,12 @@ contains
         !               data vector.
         !
         !-----------------------------------------------------------------------
-        integer, intent(in)    :: inc
-        integer, intent(in)    ::jump
-        integer, intent(in)    ::n
-        integer, intent(in)    ::lot
-        integer, intent(in)    ::isign
-        integer, intent(in) :: ifax(:)
+        integer (ip), intent(in)    :: inc
+        integer (ip), intent(in)    ::jump
+        integer (ip), intent(in)    ::n
+        integer (ip), intent(in)    ::lot
+        integer (ip), intent(in)    ::isign
+        integer (ip), intent(in) :: ifax(:)
         real,    intent(in)    :: trigs(:)
         real,    intent(in out) :: a(*)
         real,    intent(in out) ::work(*)
@@ -396,10 +401,10 @@ end subroutine fft99
 !##########################################################################
 
 subroutine fft99a (a,work,trigs,inc,jump,n,lot)
-    integer, intent(in)    :: inc
-    integer, intent(in)    ::jump
-    integer, intent(in)    ::n
-    integer, intent(in)    ::lot
+    integer (ip), intent(in)    :: inc
+    integer (ip), intent(in)    ::jump
+    integer (ip), intent(in)    ::n
+    integer (ip), intent(in)    ::lot
     real,    intent(in)    :: trigs(:)
     real,    intent(in out) :: a(*)
     real,    intent(in out) ::work(*)
@@ -493,10 +498,10 @@ end subroutine fft99a
 !##########################################################################
 
 subroutine fft99b (work,a,trigs,inc,jump,n,lot)
-    integer, intent(in)    :: inc
-    integer, intent(in)    ::jump
-    integer, intent(in)    ::n
-    integer, intent(in)    ::lot
+    integer (ip), intent(in)    :: inc
+    integer (ip), intent(in)    ::jump
+    integer (ip), intent(in)    ::n
+    integer (ip), intent(in)    ::lot
     real,    intent(in)    :: trigs(:)
     real,    intent(in out) :: a(*)
     real,    intent(in out) ::work(*)
@@ -596,12 +601,12 @@ end subroutine fft99b
 !##########################################################################
 
 subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
-    integer, intent(in)    :: inc
-    integer, intent(in)    ::jump
-    integer, intent(in)    ::n
-    integer, intent(in)    ::lot
-    integer, intent(in)    ::isign
-    integer, intent(in) :: ifax(:)
+    integer (ip), intent(in)    :: inc
+    integer (ip), intent(in)    ::jump
+    integer (ip), intent(in)    ::n
+    integer (ip), intent(in)    ::lot
+    integer (ip), intent(in)    ::isign
+    integer (ip), intent(in) :: ifax(:)
     real,    intent(in)    :: trigs(:)
     real,    intent(in out) :: a(*)
     real,    intent(in out) ::work(*)
@@ -764,8 +769,8 @@ end subroutine fft991
 !##########################################################################
 
 subroutine set99 (trigs, ifax, n)
-    integer, intent(in)  :: n
-    integer, intent(out) :: ifax(:)
+    integer (ip), intent(in)  :: n
+    integer (ip), intent(out) :: ifax(:)
     real,    intent(out) :: trigs(:)
 
     !     dimension ifax(13),trigs(1)
@@ -792,9 +797,9 @@ end subroutine set99
 !##########################################################################
 
 subroutine fax (ifax,n,mode)
-    integer, intent(out) :: ifax(:)
-    integer, intent(in)  :: n
-    integer, intent(in)  :: mode
+    integer (ip), intent(out) :: ifax(:)
+    integer (ip), intent(in)  :: n
+    integer (ip), intent(in)  :: mode
 
     integer:: nn
     integer:: k
@@ -869,8 +874,8 @@ end subroutine fax
 
 subroutine fftrig (trigs,n,mode)
     real,    intent(out) :: trigs(:)
-    integer, intent(in)  :: n
-    integer, intent(in)  :: mode
+    integer (ip), intent(in)  :: n
+    integer (ip), intent(in)  :: mode
 
     real:: del
     real:: angle
@@ -928,14 +933,14 @@ end subroutine fftrig
 !##########################################################################
 
 subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
-    integer, intent(in)  :: inc1
-    integer, intent(in)  :: inc2
-    integer, intent(in)  :: inc3
-    integer, intent(in)  :: inc4
-    integer, intent(in)  :: lot
-    integer, intent(in)  :: n
-    integer, intent(in)  :: ifac
-    integer, intent(in)  :: la
+    integer (ip), intent(in)  :: inc1
+    integer (ip), intent(in)  :: inc2
+    integer (ip), intent(in)  :: inc3
+    integer (ip), intent(in)  :: inc4
+    integer (ip), intent(in)  :: lot
+    integer (ip), intent(in)  :: n
+    integer (ip), intent(in)  :: ifac
+    integer (ip), intent(in)  :: la
     real,    intent(in)  :: a(n)
     real,    intent(in)  ::b(n)
     real,    intent(in)  ::trigs(n)

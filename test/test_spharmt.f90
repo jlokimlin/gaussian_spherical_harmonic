@@ -1,5 +1,10 @@
 program test_spharmt
 
+    use, intrinsic :: iso_fortran_env, only: &
+        wp     => REAL64, &
+        ip     => INT32, &
+        stderr => ERROR_UNIT
+
     use type_GaussianSphericalHarmonic
     !
     !  Test program for spharmt module - non-linear steady-state geostropic
@@ -64,10 +69,10 @@ program test_spharmt
     !     pxact(i,j)   the "exact" geopotential
     !
     implicit none
-    integer, parameter :: nlon=128
-    integer, parameter :: nlat=nlon/2
-    integer, parameter :: ntrunc=42
-    integer, parameter :: nmdim = (ntrunc+1)*(ntrunc+2)/2
+    integer (ip), parameter :: nlon=128
+    integer (ip), parameter :: nlat=nlon/2
+    integer (ip), parameter :: ntrunc=42
+    integer (ip), parameter :: nmdim = (ntrunc+1)*(ntrunc+2)/2
     complex, dimension(nmdim) :: vrtnm,divnm,pnm,scrnm
     complex, dimension(nmdim,3) :: dvrtdtnm,ddivdtnm,dpdtnm
     complex, dimension(ntrunc+1,nlat) :: scrm1,scrm2
@@ -224,7 +229,7 @@ program test_spharmt
 
         !==> compute error statistics.
 
-        if (mod(ncycle,mprint) .eq. 0) then
+        if (mod(ncycle,mprint) == 0) then
             call spharm(this,divg,divnm,-1)
             u = ug/coslat
             v = vg/coslat
@@ -290,14 +295,14 @@ program test_spharmt
 
         !==> forward euler, then 2nd-order adams-bashforth time steps to start.
 
-        if (ncycle .eq. 0) then
+        if (ncycle == 0) then
             dvrtdtnm(:,nnow) = dvrtdtnm(:,nnew)
             dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
             ddivdtnm(:,nnow) = ddivdtnm(:,nnew)
             ddivdtnm(:,nold) = ddivdtnm(:,nnew)
             dpdtnm(:,nnow) = dpdtnm(:,nnew)
             dpdtnm(:,nold) = dpdtnm(:,nnew)
-        else if (ncycle .eq. 1) then
+        else if (ncycle == 1) then
             dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
             ddivdtnm(:,nold) = ddivdtnm(:,nnew)
             dpdtnm(:,nold) = dpdtnm(:,nnew)
@@ -341,14 +346,14 @@ contains
         xe=3.e-1
         x =xe*(thetad-thetab)/(thetae-thetab)
         ui = 0.
-        if(x.le.0. .or. x.ge.xe) return
+        if(x<=0. .or. x>=xe) return
         ui=amp*exp(-1./x-1./(xe-x)+4./xe)
     end function ui
 
     real function atanxy(x,y)
         real x,y
         atanxy = 0.
-        if(x.eq.0. .and. y.eq.0.) return
+        if(x==0. .and. y==0.) return
         atanxy = atan2(y,x)
     end function atanxy
 

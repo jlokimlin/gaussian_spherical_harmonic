@@ -1,5 +1,10 @@
 module type_GaussianSphericalHarmonic
 
+    use, intrinsic :: iso_fortran_env, only: &
+        wp     => REAL64, &
+        ip     => INT32, &
+        stderr => ERROR_UNIT
+
     use module_fast_fourier_transform, only: &
         fft991, &
         set99
@@ -34,7 +39,7 @@ module type_GaussianSphericalHarmonic
 
         ! for fft.
         real, dimension(:), allocatable :: trigs
-        integer, dimension(:), allocatable :: ifax
+        integer (ip), dimension(:), allocatable :: ifax
 
         ! ntrunc is triangular truncation limit (e.g. 42 for T42 truncation)
         integer :: ntrunc = 0
@@ -51,7 +56,7 @@ module type_GaussianSphericalHarmonic
         real, dimension(:,:), allocatable :: pnm, hnm
 
         ! indxm is zonal wavenumber index, indxn is spherical harmonic degree index.
-        integer, dimension(:), allocatable :: indxm, indxn
+        integer (ip), dimension(:), allocatable :: indxm, indxn
         logical :: initialized = .false.
 
     end type GaussianSphericalHarmonic
@@ -62,9 +67,9 @@ contains
 
         ! initialize a sphere object.
 
-        integer, intent(in) :: nlon
-        integer, intent(in) ::nlat
-        integer, intent(in) ::ntrunc
+        integer (ip), intent(in) :: nlon
+        integer (ip), intent(in) ::nlat
+        integer (ip), intent(in) ::ntrunc
         real, intent(in) :: re
         class (GaussianSphericalHarmonic), intent(in out) :: this
         real, dimension(:), allocatable :: pnm_tmp
@@ -359,7 +364,7 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
     integer::j
     integer::m
     integer::n
-    integer, intent(in) :: idir
+    integer (ip), intent(in) :: idir
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in perform_multiple_real_fft!'
@@ -458,7 +463,7 @@ subroutine spharm(this, ugrid, anm, idir)
     integer::m
     integer::n
     integer::j
-    integer, intent(in) :: idir
+    integer (ip), intent(in) :: idir
 
     if (.not. this%initialized) then
         print *, 'uninitialized sphere object in spharm!'
@@ -628,8 +633,8 @@ subroutine sumnm(this,am,bm,anm,isign1,isign2)
     !
     class (GaussianSphericalHarmonic), intent(in) :: this
 
-    integer, intent(in) :: isign1
-    integer, intent(in) ::isign2
+    integer (ip), intent(in) :: isign1
+    integer (ip), intent(in) ::isign2
     complex, dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: anm
     complex, dimension(this%ntrunc+1,this%nlats), intent(in) :: am
     complex, dimension(this%ntrunc+1,this%nlats), intent(in) ::bm
