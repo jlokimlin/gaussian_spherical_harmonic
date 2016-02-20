@@ -30,24 +30,24 @@ module spharmt
     ! NLAT (integer) - number of latitudes
     ! NTRUNC (integer) - triangular truncation limit
     ! RE (real) - radius of sphere (m).
-    ! PNM (real pointer array dimension ((ntrunc+1)*(ntrunc+2)/2, nlat) -
+    ! PNM (real allocatable array dimension ((ntrunc+1)*(ntrunc+2)/2, nlat) -
     ! Associated legendre polynomials.
-    ! HNM (real pointer array, same size as pnm) = -(1 - x*x) * d(pnm)/dx
+    ! HNM (real allocatable array, same size as pnm) = -(1 - x*x) * d(pnm)/dx
     ! at x = sin(latitude).
-    ! GAULATS (real pointer array dimension nlat) - sin(gaussian latitudes).
-    ! WEIGHTS (real pointer array dimension nlat) - gaussian weights.
-    ! GWRC (real pointer array dimension nlat) - gaussian weights divided by
+    ! GAULATS (real allocatable array dimension nlat) - sin(gaussian latitudes).
+    ! WEIGHTS (real allocatable array dimension nlat) - gaussian weights.
+    ! GWRC (real allocatable array dimension nlat) - gaussian weights divided by
     ! rsphere*(1-x**2).
-    ! INDXM (integer pointer array dimension (ntrunc+1)*(ntrunc+2)/2) - value of
+    ! INDXM (integer allocatable array dimension (ntrunc+1)*(ntrunc+2)/2) - value of
     ! zonal wavenumber m corresponding to spectral array index
     ! nm=1,(ntrunc+1)*(ntrunc+2)/2)
-    ! INDXN (integer pointer array same size as indxm) - value of
+    ! INDXN (integer allocatable array same size as indxm) - value of
     ! spherical harmonic degree n corresponding to spectral array index
     ! nm=1,(ntrunc+1)*(ntrunc+2)/2)
-    ! LAP (real pointer array dimension (ntrunc+1)*(ntrunc+2)/2) -
+    ! LAP (real allocatable array dimension (ntrunc+1)*(ntrunc+2)/2) -
     ! lapacian operator in spectral space =
     ! -n*(n+1)/rsphere**2, where n is degree of spherical harmonic.
-    ! ILAP (real pointer array same size as lap) - inverse laplacian operator in
+    ! ILAP (real allocatable array same size as lap) - inverse laplacian operator in
     ! spectral space.
     ! TRIGS, IFAX: arrays needed by Temperton FFT.
     ! initialized (logical) - true if derived data type has been
@@ -61,7 +61,7 @@ module spharmt
     ! longitudes), nlat (number of gaussian latitudes), and re
     ! (radius of sphere in m). Must be called before anything else.
     !
-    ! SPHARMT_DESTROY(sphere_dat):  cleans up pointer arrays allocated by
+    ! SPHARMT_DESTROY(sphere_dat):  cleans up allocatable arrays allocated by
     ! spharmt_init.
     !
     ! SPHARM(sphere_dat, ugrid, anm, idir):  spherical harmonic transform
@@ -170,8 +170,8 @@ module spharmt
         integer :: nlats = 0
 
         ! for fft.
-        real, dimension(:), pointer :: trigs
-        integer, dimension(:), pointer :: ifax
+        real, dimension(:), allocatable :: trigs
+        integer, dimension(:), allocatable :: ifax
 
         ! ntrunc is triangular truncation limit (e.g. 42 for T42 truncation)
         integer :: ntrunc = 0
@@ -181,14 +181,14 @@ module spharmt
         ! the laplacian operatore -n*(n+1)/re**2 (where n is the degree
         ! of the spherical harmonic),
         ! ilap is the inverse laplacian (1/lap, set to zero for n=0).
-        real, dimension(:), pointer :: gaulats, weights, gwrc, lap, ilap
+        real, dimension(:), allocatable :: gaulats, weights, gwrc, lap, ilap
 
         ! pnm is associated legendre polynomials, hnm is -(1-x**2)d(pnm)/dx,
         ! where x = gaulats.
-        real, dimension(:,:), pointer :: pnm, hnm
+        real, dimension(:,:), allocatable :: pnm, hnm
 
         ! indxm is zonal wavenumber index, indxn is spherical harmonic degree index.
-        integer, dimension(:), pointer :: indxm, indxn
+        integer, dimension(:), allocatable :: indxm, indxn
         logical :: initialized = .false.
 
     end type GaussianSphericalHarmonic
@@ -258,7 +258,7 @@ contains
 
     subroutine spharmt_destroy(sphere_dat)
 
-        ! deallocate pointers in sphere object.
+        ! deallocate allocatables in sphere object.
 
         type (GaussianSphericalHarmonic), intent(inout) :: sphere_dat
 
