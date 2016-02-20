@@ -1,6 +1,6 @@
 program main
 
-    use spharmt, only: &
+    use type_GaussianSphericalHarmonic, only: &
         GaussianSphericalHarmonic
 
     print '(A)', 'Successful build!'

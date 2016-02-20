@@ -7,7 +7,13 @@ LINKS = \
 
 EXECUTABLE = ./build_lib.exe
 
+module_fast_fourier_transform.o: \
+module_fast_fourier_transform.f90
+	$(FC) $(FFLAGS) -c module_fast_fourier_transform.f90 $(LINKS) \
+	 -o $(OBJ_DIRECTORY)/$@ -J$(LIB_DIRECTORY)
+
 spharmt.o: \
+module_fast_fourier_transform.o \
 spharmt.f90
 	$(FC) $(FFLAGS) -c spharmt.f90 $(LINKS) \
 	 -o $(OBJ_DIRECTORY)/$@ -J$(LIB_DIRECTORY)

@@ -1,5 +1,6 @@
 program test_spharmt
-    use spharmt
+
+    use type_GaussianSphericalHarmonic
     !
     !  Test program for spharmt module - non-linear steady-state geostropic
     !  flow in a shallow water model.
@@ -78,7 +79,7 @@ program test_spharmt
         alpha,fzero,dt,cfn,dlath,theta,sth,cth,ca,sa,dlam,st,ct,cthclh,cthslh,&
         clh,time,that,sl,slh,evmax,epmax,dvmax,dpmax,htime,dvgm,cl,v2max,p2max,&
         vmax,pmax
-    type (GaussianSphericalHarmonic) :: sphere_dat
+    type (GaussianSphericalHarmonic) :: this
 
     print *,'triangular trunction T',ntrunc
     print *,nlat,' gaussian latitudes'
@@ -141,7 +142,7 @@ program test_spharmt
 
     !  initialize sphere derived data type.
 
-    call initialize_gaussian_spherical_harmonic(sphere_dat,nlon,nlat,ntrunc,aa)
+    call initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,aa)
 
     do j=1,nlon
         lambda = (j-1)*dlam
@@ -154,7 +155,7 @@ program test_spharmt
             !     and colatitude on the unrotated grid. see text starting at
             !     equation (3.10)
             !
-            theta = hpi-asin(sphere_dat%gaulats(i))
+            theta = hpi-asin(this%gaulats(i))
             st = cos(theta)
             ct = sin(theta)
             sth = ca*st+sa*ct*cl
@@ -170,7 +171,7 @@ program test_spharmt
             uxact(j,i) = uhat*(ca*sl*slh+cl*clh)
             vxact(j,i) = uhat*(ca*cl*slh*st-clh*sl*st+sa*slh*ct)
             f(j,i) = fzero*sth
-            coslat(j,i) = sqrt(1.-sphere_dat%gaulats(i)**2)
+            coslat(j,i) = sqrt(1.-this%gaulats(i)**2)
         enddo
     enddo
 
@@ -198,8 +199,8 @@ program test_spharmt
 
     !  compute spectral coeffs of initial vrt,div,p.
 
-    call getvrtdiv(sphere_dat,vrtnm,divnm,ug,vg)
-    call spharm(sphere_dat,p,pnm,1)
+    call getvrtdiv(this,vrtnm,divnm,ug,vg)
+    call spharm(this,p,pnm,1)
 
 
     !==> time step loop.
@@ -214,17 +215,17 @@ program test_spharmt
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
-        call spharm(sphere_dat,pg,pnm,-1)
-        call spharm(sphere_dat,vrtg,vrtnm,-1)
+        call spharm(this,pg,pnm,-1)
+        call spharm(this,vrtg,vrtnm,-1)
 
         !==> compute u and v on grid from spectral coeffs. of vort and div.
 
-        call getuv(sphere_dat,vrtnm,divnm,ug,vg)
+        call getuv(this,vrtnm,divnm,ug,vg)
 
         !==> compute error statistics.
 
         if (mod(ncycle,mprint) .eq. 0) then
-            call spharm(sphere_dat,divg,divnm,-1)
+            call spharm(this,divg,divnm,-1)
             u = ug/coslat
             v = vg/coslat
             p = pg
@@ -274,16 +275,16 @@ program test_spharmt
 
         scrg1(:,:) = ug(:,:)*(vrtg(:,:)+f(:,:))
         scrg2(:,:) = vg(:,:)*(vrtg(:,:)+f(:,:))
-        call rfft(sphere_dat, scrg1, scrm1, 1)
-        call rfft(sphere_dat, scrg2, scrm2, 1)
-        call sumnm(sphere_dat,scrm1,scrm2,dvrtdtnm(:,nnew),-1,1)
-        call sumnm(sphere_dat,scrm2,scrm1,ddivdtnm(:,nnew),1,-1)
+        call perform_multiple_real_fft(this, scrg1, scrm1, 1)
+        call perform_multiple_real_fft(this, scrg2, scrm2, 1)
+        call sumnm(this,scrm1,scrm2,dvrtdtnm(:,nnew),-1,1)
+        call sumnm(this,scrm2,scrm1,ddivdtnm(:,nnew),1,-1)
         scrg1(:,:) = ug(:,:)*(pg(:,:)+pzero)
         scrg2(:,:) = vg(:,:)*(pg(:,:)+pzero)
-        call sumnm(sphere_dat,scrm1,scrm2,dpdtnm(:,nnew),-1,1)
+        call sumnm(this,scrm1,scrm2,dpdtnm(:,nnew),-1,1)
         scrg1(:,:)=pg(:,:)+0.5*((ug(:,:)**2+vg(:,:)**2)/coslat(:,:)**2)
-        call spharm(sphere_dat,scrg1,scrnm,1)
-        ddivdtnm(:,nnew)=ddivdtnm(:,nnew)-sphere_dat%lap(:)*scrnm(:)
+        call spharm(this,scrg1,scrnm,1)
+        ddivdtnm(:,nnew)=ddivdtnm(:,nnew)-this%lap(:)*scrnm(:)
 
         !==> update vrt and div with third-order adams-bashforth.
 
@@ -325,7 +326,7 @@ program test_spharmt
 
     !==> deallocate pointers in sphere object.
 
-    call spharmt_destroy(sphere_dat)
+    call destroy_gaussian_spherical_harmonic(this)
 
 contains
 
