@@ -50,7 +50,7 @@ module spharmt
     ! ILAP (real pointer array same size as lap) - inverse laplacian operator in
     ! spectral space.
     ! TRIGS, IFAX: arrays needed by Temperton FFT.
-    ! ISINITIALIZED (logical) - true if derived data type has been
+    ! initialized (logical) - true if derived data type has been
     ! initialized by call to spharm_init, false if not initialized.
     !
 
@@ -155,10 +155,10 @@ module spharmt
     ! everything private to module, unless otherwise specified.
 
     private
-    public :: sphere,spharmt_init,spharmt_destroy,spharm,rfft,cosgrad,&
+    public :: GaussianSphericalHarmonic,initialize_gaussian_spherical_harmonic,spharmt_destroy,spharm,rfft,cosgrad,&
         specsmooth,getuv,getvrtdiv,sumnm,gaulw,legend
 
-    type sphere
+    type GaussianSphericalHarmonic
 
         ! rsphere is radius of sphere in m.
         real    :: rsphere = 0.
@@ -189,19 +189,19 @@ module spharmt
 
         ! indxm is zonal wavenumber index, indxn is spherical harmonic degree index.
         integer, dimension(:), pointer :: indxm, indxn
-        logical :: isinitialized=.FALSE.
+        logical :: initialized = .false.
 
-    end type sphere
+    end type GaussianSphericalHarmonic
 
 contains
 
-    subroutine spharmt_init(sphere_dat,nlon,nlat,ntrunc,re)
+    subroutine initialize_gaussian_spherical_harmonic(sphere_dat,nlon,nlat,ntrunc,re)
 
         ! initialize a sphere object.
 
         integer, intent(in) :: nlon,nlat,ntrunc
         real, intent(in) :: re
-        type (sphere), intent(inout) :: sphere_dat
+        type (GaussianSphericalHarmonic), intent(inout) :: sphere_dat
         real, dimension(:), allocatable :: pnm_tmp,hnm_tmp
         double precision, dimension(:), allocatable :: gaulats_tmp,weights_tmp
         integer :: nmdim,m,n,j
@@ -252,17 +252,17 @@ contains
         allocate(sphere_dat%ifax(13))
         call set99(sphere_dat%trigs,sphere_dat%ifax,nlon)
 
-        sphere_dat%isinitialized = .TRUE.
+        sphere_dat%initialized = .true.
 
-    end subroutine spharmt_init
+    end subroutine initialize_gaussian_spherical_harmonic
 
     subroutine spharmt_destroy(sphere_dat)
 
         ! deallocate pointers in sphere object.
 
-        type (sphere), intent(inout) :: sphere_dat
+        type (GaussianSphericalHarmonic), intent(inout) :: sphere_dat
 
-        if (.not. sphere_dat%isinitialized) return
+        if (.not. sphere_dat%initialized) return
 
         deallocate(sphere_dat%gaulats)
         deallocate(sphere_dat%weights)
@@ -318,10 +318,10 @@ contains
                     p1 = ((2.0*j - 1.0)*z*p2 - (j - 1.0)*p3)/j
                 end do
 
-                pp = nlat*(z*p1 - p2)/(z*z - 1.0E+00)
+                pp = nlat*(z*p1 - p2)/(z*z - 1.0e+00)
                 z1 = z
                 z  = z1 - p1/pp
-                if(ABS(z - z1) .LT. converg) go to 10
+                if(ABS(z - z1) .lt. converg) go to 10
             end do
             print *, 'abscissas failed to converge in itermax iterations'
             print *, 'stopping in gaulw!'
@@ -337,7 +337,7 @@ contains
     return
 end subroutine gaulw
 
-SUBROUTINE LEGEND(X,PMN,HMN)
+subroutine LEGEND(x,pmn,hmn)
     !
     !     THIS SUBROUTINE COMPUTES ASSOCIATED LEGENDRE
     !     FUNCTIONS, PMN, AND THE DERIVATIVE QUANTITY
@@ -355,21 +355,21 @@ SUBROUTINE LEGEND(X,PMN,HMN)
     !     POLYNOMIALS, C. 1962, FOR INFORMATION ON THE ACCURATE
     !     COMPUTATION OF ASSOCIATED LEGENDRE FUNCTIONS.
 
-    real, dimension(:), intent(inout) ::  PMN,  HMN
+    real, dimension(:), intent(inout) ::  pmn,  hmn
     double precision, intent(in) :: x
     integer :: m,n,nm,i,nmax,np1,nmstrt,j,nmdim,ntrunc
-    double precision :: A, B, PROD, SINSQ, &
-        eps,epsnmp1,EPSPMN, PMNJ, PMNJM1, PMNJM2
+    double precision :: a, b, prod, sinsq, &
+        eps,epsnmp1,epspmn, pmnj, pmnjm1, pmnjm2
 
 
     !**** SET PARAMETERS FOR ENTRY INTO THE RECURSIVE FORMULAE.
 
 
-    SINSQ = 1.D0 - X * X
+    sinsq = 1.D0 - x * x
 
-    A     = 1.D0
-    B     = 0.D0
-    PROD  = 1.D0
+    a     = 1.D0
+    b     = 0.D0
+    prod  = 1.D0
 
     nmdim = size(pmn)
     ntrunc = nint((-1.+sqrt(1+8*float(nmdim)))/2.)-1
@@ -380,71 +380,71 @@ SUBROUTINE LEGEND(X,PMN,HMN)
 
     !**** LOOP FOR THE 'M' INDEX.
 
-    NMSTRT = 0
-    DO I = 1, NTRUNC+1
+    nmstrt = 0
+    do i = 1, ntrunc+1
 
-        M    = (I - 1)
-        NMAX = NTRUNC+1-M
+        m    = (i - 1)
+        nmax = ntrunc+1-m
 
         !        WHEN M=0 (I=1), STANDARD LEGENDRE POLYNOMIALS ARE
         !        GENERATED.
 
-        IF (M .NE. 0) THEN
-            A    = A + 2.D0
-            B    = B + 2.D0
-            PROD = PROD * SINSQ * A / B
-        END IF
+        if (m .ne. 0) then
+            a    = a + 2.D0
+            b    = b + 2.D0
+            prod = prod * sinsq * a / b
+        end if
 
         !****    GENERATE PMN AND HMN FOR J = 1 AND 2.
 
-        PMNJM2   = SQRT(0.5D0 * PROD)
-        NM = NMSTRT + 1
-        PMN(NM) = PMNJM2
+        pmnjm2   = SQRT(0.5D0 * prod)
+        nm = nmstrt + 1
+        pmn(nm) = pmnjm2
 
-        PMNJM1   = SQRT( DBLE(2 * M + 3) ) * X * PMNJM2
-        IF (NM .NE. NMDIM) PMN(NM+1) = PMNJM1
+        pmnjm1   = SQRT( DBLE(2 * m + 3) ) * x * pmnjm2
+        if (nm .ne. nmdim) pmn(nm+1) = pmnjm1
 
-        NP1 = M + 1
-        EPSNMP1 = SQRT( DBLE(NP1*NP1 - M*M) / DBLE(4*NP1*NP1 - 1) )
-        EPSPMN   = X * PMNJM1 - EPSNMP1 * PMNJM2
+        np1 = m + 1
+        epsnmp1 = SQRT( DBLE(np1*np1 - m*m) / DBLE(4*np1*np1 - 1) )
+        epspmn   = x * pmnjm1 - epsnmp1 * pmnjm2
 
-        HMN(NM) = DBLE(M) * EPSNMP1 * PMNJM1
-        IF (NM .NE. NMDIM) &
-            HMN(NM+1) = DBLE(M+1) * EPSPMN  -  &
-            DBLE(M+2) * EPSNMP1 * PMNJM2
+        hmn(nm) = DBLE(m) * epsnmp1 * pmnjm1
+        if (nm .ne. nmdim) &
+            hmn(nm+1) = DBLE(m+1) * epspmn  -  &
+            DBLE(m+2) * epsnmp1 * pmnjm2
 
         !****    LOOP FOR THE 'N' INDEX.
         !        NOW APPLY THE RECURSION FORMULAE FOR J .GE. 3.
 
-        DO J    = 3, NMAX
-            N = M + J - 1
-            NM = NMSTRT + J
-            EPS = SQRT( DBLE(N*N - M*M) / DBLE(4*N*N - 1) )
-            PMNJ     = EPSPMN / EPS
-            PMN(NM) = PMNJ
+        do j    = 3, nmax
+            n = m + j - 1
+            nm = nmstrt + j
+            eps = SQRT( DBLE(n*n - m*m) / DBLE(4*n*n - 1) )
+            pmnj     = epspmn / eps
+            pmn(nm) = pmnj
 
             !        COMPUTE EPS * PMN FOR J+1.
 
-            EPSPMN   = X * PMNJ - EPS * PMNJM1
+            epspmn   = x * pmnj - eps * pmnjm1
 
             !        COMPUTE THE DERIVATIVE.
 
-            HMN(NM) = DBLE(N) * EPSPMN -  &
-                DBLE(N+1) * EPS * PMNJM1
+            hmn(nm) = DBLE(n) * epspmn -  &
+                DBLE(n+1) * eps * pmnjm1
 
-            PMNJM2   = PMNJM1
-            PMNJM1   = PMNJ
-        ENDDO
-        NMSTRT = NMSTRT + NMAX
-    ENDDO
+            pmnjm2   = pmnjm1
+            pmnjm1   = pmnj
+        enddo
+        nmstrt = nmstrt + nmax
+    enddo
 
-END SUBROUTINE LEGEND
+end subroutine LEGEND
 
 subroutine rfft(sphere_dat, data, coeff, idir)
 
     ! real multiple fft (uses temperton fft991)
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
 
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(inout) :: data
     real, dimension(sphere_dat%nlats*(sphere_dat%nlons+2)) :: wrk1
@@ -453,7 +453,7 @@ subroutine rfft(sphere_dat, data, coeff, idir)
     integer ::  nlons,nlats,ntrunc,mwaves,i,j,m,n
     integer, intent(in) :: idir
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in rfft!'
         stop
     end if
@@ -540,7 +540,7 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
 
     ! spherical harmonic transform
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
 
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(inout) :: ugrid
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2), intent(inout) :: anm
@@ -548,7 +548,7 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
     integer ::  nlats,ntrunc,mwaves,nmstrt,nm,m,n,j
     integer, intent(in) :: idir
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in spharm!'
         stop
     end if
@@ -557,7 +557,7 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
     ntrunc = sphere_dat%ntrunc
     mwaves = ntrunc+1
 
-    IF (IDIR .eq. +1) then
+    if (idir .eq. +1) then
 
         !==>  GRID SPACE TO SPECTRAL SPACE TRANSFORMATION
         !     FIRST, INITIALIZE ARRAY.
@@ -572,11 +572,11 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
         !     OBTAIN THE TRANSFORMED VARIABLE IN SPECTRAL SPACE.
 
         do j=1,nlats
-            NMSTRT = 0
-            DO m = 1, mwaves
-                DO n = 1, mwaves-m+1
-                    NM = NMSTRT + n
-                    anm(NM)=anm(NM)+sphere_dat%pnm(nm,j)*sphere_dat%weights(j)*am(m,j)
+            nmstrt = 0
+            do m = 1, mwaves
+                do n = 1, mwaves-m+1
+                    nm = nmstrt + n
+                    anm(nm)=anm(nm)+sphere_dat%pnm(nm,j)*sphere_dat%weights(j)*am(m,j)
                 enddo
                 nmstrt = nmstrt + mwaves-m+1
             enddo
@@ -586,7 +586,7 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
 
     else if (idir .eq. -1) then
 
-        DO J = 1, NLATS
+        do j = 1, nlats
 
             !==>  INVERSE LEGENDRE TRANSFORM TO GET VALUES OF THE ZONAL FOURIER
             !     TRANSFORM AT LATITUDE j.
@@ -594,17 +594,17 @@ subroutine spharm(sphere_dat, ugrid, anm, idir)
             !==>  SUM THE VARIOUS MERIDIONAL MODES TO BUILD THE FOURIER SERIES
             !     COEFFICIENT FOR ZONAL WAVENUMBER M=I-1 AT the GIVEN LATITUDE.
 
-            NMSTRT = 0
-            do m = 1, MWAVES
+            nmstrt = 0
+            do m = 1, mwaves
                 am(m,j) = cmplx(0., 0.)
-                DO n = 1, mwaves-m+1
-                    NM = NMSTRT + n
-                    am(m,j) = am(m,j)  +  anm(NM) * sphere_dat%pnm(NM,j)
+                do n = 1, mwaves-m+1
+                    nm = nmstrt + n
+                    am(m,j) = am(m,j)  +  anm(nm) * sphere_dat%pnm(nm,j)
                 enddo
-                NMSTRT = NMSTRT + mwaves-m+1
+                nmstrt = nmstrt + mwaves-m+1
             enddo
 
-        ENDDO
+        enddo
 
         !==>  FOURIER TRANSFORM TO COMPUTE THE VALUES OF THE VARIABLE IN GRID
         !     SPACE at THE J-TH LATITUDE.
@@ -623,14 +623,14 @@ subroutine getuv(sphere_dat,vrtnm,divnm,ug,vg)
     ! compute U,V (winds times cos(lat)) from vrtnm,divnm
     ! (spectral coeffs of vorticity and divergence).
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(out) ::  ug,vg
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2), intent(in) :: vrtnm,divnm
     complex, dimension(sphere_dat%ntrunc+1,sphere_dat%nlats)  :: um,vm
     integer :: nlats,ntrunc,mwaves,m,j,n,nm,nmstrt
     real ::  rm
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in getuv!'
         stop
     end if
@@ -669,13 +669,13 @@ subroutine getvrtdiv(sphere_dat,vrtnm,divnm,ug,vg)
     ! compute vrtnm,divnm (spectral coeffs of vorticity and
     ! divergence) from U,V (winds time cos(lat)).
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
 
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(inout) ::  ug,vg
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2), intent(in) :: vrtnm,divnm
     complex, dimension(sphere_dat%ntrunc+1,sphere_dat%nlats) :: um,vm
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in getvrtdiv!'
         stop
     end if
@@ -704,7 +704,7 @@ subroutine sumnm(sphere_dat,am,bm,anm,isign1,isign2)
     !  for example on how to use this routine, see subroutine getvrtdiv.
     !
     !
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
 
     integer, intent(in) :: isign1,isign2
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2) :: anm
@@ -712,7 +712,7 @@ subroutine sumnm(sphere_dat,am,bm,anm,isign1,isign2)
     integer :: nlats,ntrunc,mwaves,j,m,n,nm,nmstrt
     real ::  sign1,sign2,rm
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in sumnm!'
         stop
     end if
@@ -734,15 +734,15 @@ subroutine sumnm(sphere_dat,am,bm,anm,isign1,isign2)
     mwaves = ntrunc+1
 
     anm = 0.
-    DO J=1,NLATS
-        NMSTRT = 0
-        DO m = 1, MWAVES
-            RM = M-1
-            DO n   = 1, mwaves-m+1
-                NM = NMSTRT + n
-                aNM(NM) = aNM(NM) + sign1*sphere_dat%GWrC(j)*(CMPLX(0.,RM) &
-                    * sphere_dat%PNM(NM,J) * am(m,j) &
-                    + sign2 * sphere_dat%HNM(NM,J) * bm(m,j))
+    do j=1,nlats
+        nmstrt = 0
+        do m = 1, mwaves
+            rm = m-1
+            do n   = 1, mwaves-m+1
+                nm = nmstrt + n
+                anm(nm) = aNM(nm) + sign1*sphere_dat%GWrC(j)*(CMPLX(0.,rm) &
+                    * sphere_dat%PNM(nm,j) * am(m,j) &
+                    + sign2 * sphere_dat%HNM(nm,j) * bm(m,j))
             enddo
             nmstrt = nmstrt + mwaves - m +1
         enddo
@@ -755,7 +755,7 @@ subroutine cosgrad(sphere_dat,divnm,ug,vg)
     ! compute coslat * gradient of spectral coefficients (divnm)
     ! vector gradient returned on grid as (ug,vg)
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
 
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(out) ::  ug,vg
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2), intent(in) :: divnm
@@ -763,7 +763,7 @@ subroutine cosgrad(sphere_dat,divnm,ug,vg)
     integer :: nlats,ntrunc,mwaves,j,m,n,nm,nmstrt
     real :: rm
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in cosgrad!'
         stop
     end if
@@ -801,13 +801,13 @@ subroutine specsmooth(sphere_dat,datagrid,smooth)
     ! input: smooth(sphere_dat%ntrunc+1) - smoothing factor as a
     ! function of degree (sphere_dat%indxn).
 
-    type (sphere), intent(in) :: sphere_dat
+    type (GaussianSphericalHarmonic), intent(in) :: sphere_dat
     real, dimension(sphere_dat%nlons,sphere_dat%nlats), intent(inout) :: datagrid
     real, dimension(sphere_dat%ntrunc+1), intent(in) :: smooth
     complex, dimension((sphere_dat%ntrunc+1)*(sphere_dat%ntrunc+2)/2) :: dataspec
     integer :: n,nm,nmdim
 
-    if (.not. sphere_dat%isinitialized) then
+    if (.not. sphere_dat%initialized) then
         print *, 'uninitialized sphere object in specsmooth!'
         stop
     end if
@@ -1093,7 +1093,7 @@ subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
     !
 
     integer :: nfax, nx, nh, ink, igo, ibase, jbase
-    integer :: i, j, k, L, m, ia, la, ib
+    integer :: i, j, k, l, m, ia, la, ib
 
     nfax=ifax(1)
     nx=n+1
@@ -1106,7 +1106,7 @@ subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
     if (mod(nfax,2).eq.1) goto 40
     ibase=inc+1
     jbase=1
-    do L=1,lot
+    do l=1,lot
         i=ibase
         j=jbase
         do m=1,n
@@ -1156,7 +1156,7 @@ subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
    if (mod(nfax,2).ne.1) then
        ibase=1
        jbase=ia
-       do L=1,lot
+       do l=1,lot
            i=ibase
            j=jbase
            do m=1,n
@@ -1172,7 +1172,7 @@ subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
    !   fill in cyclic boundary points
    ia=1
    ib=n*inc+1
-   do L=1,lot
+   do l=1,lot
        a(ia)=a(ib)
        a(ib+inc)=a(ia+inc)
        ia=ia+jump
@@ -1202,7 +1202,7 @@ subroutine fft99a (a,work,trigs,inc,jump,n,lot)
     !     subroutine fft99a - preprocessing step for fft99, isign=+1
     !     (spectral to gridpoint transform)
 
-    integer :: nh, nx, ink, k, L
+    integer :: nh, nx, ink, k, l
     integer :: ia, ib, ja, jb, iabase, ibbase, jabase, jbbase
     real    :: c, s
 
@@ -1215,7 +1215,7 @@ subroutine fft99a (a,work,trigs,inc,jump,n,lot)
     ib=n*inc+1
     ja=1
     jb=2
-    do L=1,lot
+    do l=1,lot
         work(ja)=a(ia)+a(ib)
         work(jb)=a(ia)-a(ib)
         ia=ia+jump
@@ -1237,7 +1237,7 @@ subroutine fft99a (a,work,trigs,inc,jump,n,lot)
         jb=jbbase
         c=trigs(n+k)
         s=trigs(n+k+1)
-        do L=1,lot
+        do l=1,lot
             work(ja)=(a(ia)+a(ib))- &
                 (s*(a(ia)-a(ib))+c*(a(ia+inc)+a(ib+inc)))
             work(jb)=(a(ia)+a(ib))+ &
@@ -1261,7 +1261,7 @@ subroutine fft99a (a,work,trigs,inc,jump,n,lot)
     if (iabase.eq.ibbase) then
         ia=iabase
         ja=jabase
-        do L=1,lot
+        do l=1,lot
             work(ja)=2.0*a(ia)
             work(ja+1)=-2.0*a(ia+inc)
             ia=ia+jump
@@ -1283,7 +1283,7 @@ subroutine fft99b (work,a,trigs,inc,jump,n,lot)
     !     subroutine fft99b - postprocessing step for fft99, isign=-1
     !     (gridpoint to spectral transform)
 
-    integer :: nh, nx, ink, k, L
+    integer :: nh, nx, ink, k, l
     integer :: ia, ib, ja, jb, iabase, ibbase, jabase, jbbase
     real    :: scale, c, s
 
@@ -1297,7 +1297,7 @@ subroutine fft99b (work,a,trigs,inc,jump,n,lot)
     ib=2
     ja=1
     jb=n*inc+1
-    do L=1,lot
+    do l=1,lot
         a(ja)=scale*(work(ia)+work(ib))
         a(jb)=scale*(work(ia)-work(ib))
         a(ja+inc)=0.0
@@ -1322,7 +1322,7 @@ subroutine fft99b (work,a,trigs,inc,jump,n,lot)
         jb=jbbase
         c=trigs(n+k)
         s=trigs(n+k+1)
-        do L=1,lot
+        do l=1,lot
             a(ja)=scale*((work(ia)+work(ib)) &
                 +(c*(work(ia+1)+work(ib+1))+s*(work(ia)-work(ib))))
             a(jb)=scale*((work(ia)+work(ib)) &
@@ -1347,7 +1347,7 @@ subroutine fft99b (work,a,trigs,inc,jump,n,lot)
         ia=iabase
         ja=jabase
         scale=2.0*scale
-        do L=1,lot
+        do l=1,lot
             a(ja)=scale*work(ia)
             a(ja+inc)=-scale*work(ia+1)
             ia=ia+nx
@@ -1412,7 +1412,7 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !
 
     integer :: nfax, nx, nh, ink, igo, ibase, jbase
-    integer :: i, j, k, L, m, ia, la, ib
+    integer :: i, j, k, l, m, ia, la, ib
 
 
     nfax=ifax(1)
@@ -1426,7 +1426,7 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     if (mod(nfax,2).eq.1) goto 40
     ibase=1
     jbase=1
-    do L=1,lot
+    do l=1,lot
         i=ibase
         j=jbase
         do m=1,n
@@ -1475,7 +1475,7 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
    if (mod(nfax,2).ne.1) then
        ibase=1
        jbase=1
-       do L=1,lot
+       do l=1,lot
            i=ibase
            j=jbase
            do m=1,n
@@ -1490,7 +1490,7 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 
    !   fill in zeros at end
    ib=n*inc+1
-   do L=1,lot
+   do l=1,lot
        a(ib)=0.0
        a(ib+inc)=0.0
        ib=ib+jump
@@ -1541,7 +1541,7 @@ subroutine fax (ifax,n,mode)
     integer, intent(out) :: ifax(:)
     integer, intent(in)  :: n, mode
 
-    integer :: nn, k, L, inc, nfax, ii, istop, i, item
+    integer :: nn, k, l, inc, nfax, ii, istop, i, item
 
     nn=n
     if (iabs(mode).eq.1) go to 10
@@ -1572,16 +1572,16 @@ subroutine fax (ifax,n,mode)
     if (nn.eq.1) go to 80
     go to 40
     !     now find remaining factors
-50  L=5
+50  l=5
     inc=2
     !     inc alternately takes on values 2 and 4
-60  if (mod(nn,L).ne.0) go to 70
+60  if (mod(nn,l).ne.0) go to 70
     k=k+1
-    ifax(k)=L
-    nn=nn/L
+    ifax(k)=l
+    nn=nn/l
     if (nn.eq.1) go to 80
     go to 60
-70  L=L+inc
+70  l=l+inc
     inc=6-inc
     go to 60
 80  ifax(1)=k-1
@@ -1609,15 +1609,15 @@ subroutine fftrig (trigs,n,mode)
     integer, intent(in)  :: n, mode
 
     real    :: del, angle,pi
-    integer :: imode, nn, nh, i, L, la
+    integer :: imode, nn, nh, i, l, la
 
     pi = 4.*atan(1.0)
     imode=iabs(mode)
     nn=n
     if (imode.gt.1.and.imode.lt.6) nn=n/2
     del=(pi+pi)/real(nn)
-    L=nn+nn
-    do i=1,L,2
+    l=nn+nn
+    do i=1,l,2
         angle=0.5*real(i-1)*del
         trigs(i)=cos(angle)
         trigs(i+1)=sin(angle)
@@ -1627,9 +1627,9 @@ subroutine fftrig (trigs,n,mode)
 
     del=0.5*del
     nh=(nn+1)/2
-    L=nh+nh
+    l=nh+nh
     la=nn+nn
-    do i=1,L,2
+    do i=1,l,2
         angle=0.5*real(i-1)*del
         trigs(la+i)=cos(angle)
         trigs(la+i+1)=sin(angle)
@@ -1685,7 +1685,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     real :: cos72=0.309016994374947
     real :: sin60=0.866025403784437
 
-    integer :: i, j, k, L, m, iink, jink, jump, ibase, jbase, igo, ijk, la1
+    integer :: i, j, k, l, m, iink, jink, jump, ibase, jbase, igo, ijk, la1
     integer :: ia, ja, ib, jb, kb, ic, jc, kc, id, jd, kd, ie, je, ke
     real    :: c1, s1, c2, s2, c3, s3, c4, s4
 
@@ -1708,7 +1708,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
             ja=1
             ib=ia+iink
             jb=ja+jink
-            do 20 L=1,la
+            do 20 l=1,la
                 i=ibase
                 j=jbase
                 do 15 ijk=1,lot
@@ -1729,7 +1729,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 kb=k+k-2
                 c1=trigs(kb+1)
                 s1=trigs(kb+2)
-                do 30 L=1,la
+                do 30 l=1,la
                     i=ibase
                     j=jbase
                     do 25 ijk=1,lot
@@ -1756,7 +1756,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
             jb=ja+jink
             ic=ib+iink
             jc=jb+jink
-            do 60 L=1,la
+            do 60 l=1,la
                 i=ibase
                 j=jbase
                 do 55 ijk=1,lot
@@ -1782,7 +1782,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 s1=trigs(kb+2)
                 c2=trigs(kc+1)
                 s2=trigs(kc+2)
-                do 70 L=1,la
+                do 70 l=1,la
                     i=ibase
                     j=jbase
                     do 65 ijk=1,lot
@@ -1821,7 +1821,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
             jc=jb+jink
             id=ic+iink
             jd=jc+jink
-            do 100 L=1,la
+            do 100 l=1,la
                 i=ibase
                 j=jbase
                 do 95 ijk=1,lot
@@ -1852,7 +1852,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 s2=trigs(kc+2)
                 c3=trigs(kd+1)
                 s3=trigs(kd+2)
-                do 110 L=1,la
+                do 110 l=1,la
                     i=ibase
                     j=jbase
                     do 105 ijk=1,lot
@@ -1899,7 +1899,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
             jd=jc+jink
             ie=id+iink
             je=jd+jink
-            do 140 L=1,la
+            do 140 l=1,la
                 i=ibase
                 j=jbase
                 do 135 ijk=1,lot
@@ -1943,7 +1943,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 s3=trigs(kd+2)
                 c4=trigs(ke+1)
                 s4=trigs(ke+2)
-                do 150 L=1,la
+                do 150 l=1,la
                     i=ibase
                     j=jbase
                     do 145 ijk=1,lot

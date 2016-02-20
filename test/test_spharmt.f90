@@ -78,7 +78,7 @@ program test_spharmt
         alpha,fzero,dt,cfn,dlath,theta,sth,cth,ca,sa,dlam,st,ct,cthclh,cthslh,&
         clh,time,that,sl,slh,evmax,epmax,dvmax,dpmax,htime,dvgm,cl,v2max,p2max,&
         vmax,pmax
-    type (sphere) :: sphere_dat
+    type (GaussianSphericalHarmonic) :: sphere_dat
 
     print *,'triangular trunction T',ntrunc
     print *,nlat,' gaussian latitudes'
@@ -141,7 +141,7 @@ program test_spharmt
 
     !  initialize sphere derived data type.
 
-    call spharmt_init(sphere_dat,nlon,nlat,ntrunc,aa)
+    call initialize_gaussian_spherical_harmonic(sphere_dat,nlon,nlat,ntrunc,aa)
 
     do j=1,nlon
         lambda = (j-1)*dlam

@@ -1,7 +1,7 @@
 program main
 
     use spharmt, only: &
-        sphere
+        GaussianSphericalHarmonic
 
     print '(A)', 'Successful build!'
 
