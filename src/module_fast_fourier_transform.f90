@@ -533,7 +533,7 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     ink=inc+inc
 
     !   a(0) and a(n/2)
-    scale_constant=1.0_wp/real(n, kind=wp)
+    scale_constant = 1.0_wp/real(n, kind=wp)
     ia=1
     ib=2
     ja=1

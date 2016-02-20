@@ -163,20 +163,19 @@ program test_spharmt
     print *,'triangular trunction T',ntrunc
     print *,nlat,' gaussian latitudes'
     pi = acos( -1.0_wp )
-    hpi = pi/2.
-    dtr = pi/180.
+    hpi = pi/2.0_wp
+    dtr = pi/180.0_wp
     aa = 6.37122e+6
     omega = 7.292e-5
     fzero = omega+omega
-    uzero = 40.
+    uzero = 40.0_wp
     pzero = 2.94e+4
-    alphad = 60.
+    alphad = 60.0_wp
     alpha = dtr*alphad
 
-    dt = 300.
-    itmax = nint(86400.*5./dt, kind=ip)
+    dt = 300.0_wp
+    itmax = nint(86400.0_wp * 5.0_wp/dt, kind=ip)
     mprint = itmax/10
-
 
     !     compute the derivative of the unrotated geopotential
     !     p as a function of latitude
@@ -190,22 +189,22 @@ program test_spharmt
         theta = i*dlath
         sth = sin(theta)
         cth = cos(theta)
-        uhat = ui(uzero,hpi-theta)
+        uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-theta)
         phlt(i) = cfn*cth*uhat*(uhat/sth+aa*fzero)
-    enddo
+    end do
 
     !     compute sine transform of the derivative of the geopotential
     !     for the purpose of computing the geopotential by integration
     !     see equation (3.9) in reference [1] above
 
-    call sine(nlm2,phlt)
+    call compute_sine_transform(phlt(1:nlm2))
 
     !     compute the cosine coefficients of the unrotated geopotential
     !     by the formal integration of the sine series representation
 
     do i=1,nlm2
         phlt(i) = -phlt(i)/i
-    enddo
+    end do
 
     !     phlt(i) contains the coefficients in the cosine series
     !     representation of the unrotated geopotential that are used
@@ -245,14 +244,14 @@ program test_spharmt
             slh = sin(lhat)
             cth = clh*cthclh+slh*cthslh
             that = atanxy(sth,cth)
-            uhat = ui(uzero,hpi-that)
-            pxact(j,i) = cosine(that,nlm2,phlt)
+            uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-that)
+            pxact(j,i) = compute_cosine_transform(that,phlt)
             uxact(j,i) = uhat*(ca*sl*slh+cl*clh)
             vxact(j,i) = uhat*(ca*cl*slh*st-clh*sl*st+sa*slh*ct)
             f(j,i) = fzero*sth
-            coslat(j,i) = sqrt(1.-this%gaulats(i)**2)
-        enddo
-    enddo
+            coslat(j,i) = sqrt(1.0_wp - this%gaulats(i)**2)
+        end do
+    end do
 
     vmax = 0.
     pmax = 0.
@@ -264,8 +263,8 @@ program test_spharmt
             p2max = p2max+pxact(i,j)**2
             vmax = amax1(abs(uxact(i,j)),abs(vxact(i,j)),vmax)
             pmax = amax1(abs(pxact(i,j)),pmax)
-        enddo
-    enddo
+        end do
+    end do
     !
     !     initialize first time step
     !
@@ -288,9 +287,9 @@ program test_spharmt
     nnow = 2
     nold = 3
 
-    do ncycle=0,itmax
+    do ncycle = 0, itmax
 
-        time = float(ncycle)*dt
+        time = real(ncycle, kind=wp)*dt
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
@@ -308,7 +307,7 @@ program test_spharmt
             u = ug/coslat
             v = vg/coslat
             p = pg
-            htime = time/3600.
+            htime = time/3600.0_wp
             write(*,390) ncycle,htime,dt,nlat,nlon,ntrunc,omega,pzero,uzero,alphad
 
 390         format(//' steady nonlinear rotated flow:',/    &
@@ -323,11 +322,11 @@ program test_spharmt
                 ' maximum velocity     ',1pe15.6,      &
                 ' tilt angle           ',1pe15.6)
 
-            dvgm = 0.
-            dvmax = 0.
-            dpmax = 0.
-            evmax = 0.0
-            epmax = 0.0
+            dvgm = 0.0_wp
+            dvmax = 0.0_wp
+            dpmax = 0.0_wp
+            evmax = 0.0_wp
+            epmax = 0.0_wp
             do j=1,nlat
                 do i=1,nlon
                     dvgm = amax1(dvgm,abs(divg(i,j)))
@@ -336,8 +335,8 @@ program test_spharmt
                     evmax = &
                         amax1(evmax,abs(v(i,j)-vxact(i,j)),abs(u(i,j)-uxact(i,j)))
                     epmax = amax1(epmax,abs(p(i,j)-pxact(i,j)))
-                enddo
-            enddo
+                end do
+            end do
             dvmax = sqrt(dvmax/v2max)
             dpmax = sqrt(dpmax/p2max)
             evmax = evmax/vmax
@@ -369,27 +368,32 @@ program test_spharmt
 
         !==> forward euler, then 2nd-order adams-bashforth time steps to start.
 
-        if (ncycle == 0) then
-            dvrtdtnm(:,nnow) = dvrtdtnm(:,nnew)
-            dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
-            ddivdtnm(:,nnow) = ddivdtnm(:,nnew)
-            ddivdtnm(:,nold) = ddivdtnm(:,nnew)
-            dpdtnm(:,nnow) = dpdtnm(:,nnew)
-            dpdtnm(:,nold) = dpdtnm(:,nnew)
-        else if (ncycle == 1) then
-            dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
-            ddivdtnm(:,nold) = ddivdtnm(:,nnew)
-            dpdtnm(:,nold) = dpdtnm(:,nnew)
-        end if
+        select case (ncycle)
+            case (0)
+                dvrtdtnm(:,nnow) = dvrtdtnm(:,nnew)
+                dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
+                ddivdtnm(:,nnow) = ddivdtnm(:,nnew)
+                ddivdtnm(:,nold) = ddivdtnm(:,nnew)
+                dpdtnm(:,nnow) = dpdtnm(:,nnew)
+                dpdtnm(:,nold) = dpdtnm(:,nnew)
+            case (1)
+                dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
+                ddivdtnm(:,nold) = ddivdtnm(:,nnew)
+                dpdtnm(:,nold) = dpdtnm(:,nnew)
+        end select
+
         vrtnm(:) = vrtnm(:) + dt*(&
-            (23./12.)*dvrtdtnm(:,nnew) - (16./12.)*dvrtdtnm(:,nnow)+&
-            (5./12.)*dvrtdtnm(:,nold) )
+            (23.0_wp/12.0_wp)*dvrtdtnm(:,nnew) &
+            - (16.0_wp/12.0_wp)*dvrtdtnm(:,nnow)+&
+            (5.0_wp/12.0_wp)*dvrtdtnm(:,nold) )
         divnm(:) = divnm(:) + dt*(&
-            (23./12.)*ddivdtnm(:,nnew) - (16./12.)*ddivdtnm(:,nnow)+&
-            (5./12.)*ddivdtnm(:,nold) )
+            (23.0_wp/12.0_wp)*ddivdtnm(:,nnew) &
+            - (16.0_wp/12.0_wp)*ddivdtnm(:,nnow)+&
+            (5.0_wp/12.0_wp)*ddivdtnm(:,nold) )
         pnm(:) = pnm(:) + dt*(&
-            (23./12.)*dpdtnm(:,nnew) - (16./12.)*dpdtnm(:,nnow)+&
-            (5./12.)*dpdtnm(:,nold) )
+            (23.0_wp/12.0_wp)*dpdtnm(:,nnew) &
+            - (16.0_wp/12.0_wp)*dpdtnm(:,nnow)+&
+            (5.0_wp/12.0_wp)*dpdtnm(:,nold) )
 
         !==> SWITCH INDICES.
 
@@ -401,7 +405,7 @@ program test_spharmt
 
     !==> end time step loop
 
-    enddo
+    end do
 
     !==> deallocate pointers in sphere object.
 
@@ -409,25 +413,38 @@ program test_spharmt
 
 contains
 
-    real (wp) function ui(amp,thetad)
+    pure function compute_initial_unrotated_longitudinal_velocity(amp,thetad) result (return_value)
         !
         !     computes the initial unrotated longitudinal velocity
         !     see section 3.3.
         !
-        real (wp):: amp
-        real (wp):: thetad
-        real (wp):: thetab
-        real (wp):: thetae
-        real (wp):: xe
-        real (wp):: x
-        thetab=-pi/6.
-        thetae= pi/2.
-        xe=3.e-1
-        x =xe*(thetad-thetab)/(thetae-thetab)
-        ui = 0.
-        if(x<=0. .or. x>=xe) return
-        ui=amp*exp(-1./x-1./(xe-x)+4./xe)
-    end function ui
+        real (wp), intent (in) :: amp
+        real (wp), intent (in) :: thetad
+        real (wp)              :: return_value
+
+        real (wp), parameter :: ZERO = nearest( 1.0_wp, 1.0_wp) - nearest( 1.0_wp, -1.0_wp)
+        real (wp), parameter :: PI = acos( -1.0_wp )
+        real (wp)            :: x
+
+        associate( &
+            thetab => -pi/6.0_wp, &
+            thetae => pi/2.0_wp, &
+            xe => 3.0e-1_wp &
+            )
+
+            x =xe*(thetad-thetab)/(thetae-thetab)
+
+            return_value = 0.0_wp
+
+            if(x <= ZERO .or. x >= xe) return
+
+            associate( arg => (-1.0_wp/x) - (1.0_wp/(xe-x)) + (4.0_wp/xe) )
+                return_value = amp * exp( arg )
+            end associate
+
+        end associate
+
+    end function compute_initial_unrotated_longitudinal_velocity
 
     real (wp) function atanxy(x,y)
         real (wp):: x
@@ -437,36 +454,52 @@ contains
         atanxy = atan2(y,x)
     end function atanxy
 
-    subroutine sine(n,x)
-        !     computes the sine transform
-        integer (ip)::  n
-        integer (ip)::i
-        integer (ip)::j
-        real (wp):: x(n)
-        real (wp)::w(n)
-        real (wp)::arg
-        arg = 4.*atan(1.)/(n+1)
-        do j=1,n
-            w(j) = 0.
-            do i=1,n
-                w(j) = w(j)+x(i)*sin(i*j*arg)
-            enddo
-        enddo
-        do i=1,n
-            x(i) = 2.*w(i)
-        enddo
-    end subroutine sine
+    subroutine compute_sine_transform( x )
+        !
+        real (wp), intent (in out) :: x(:)
 
-    real (wp) function cosine(theta,n,cf)
-        !     computes the cosine transform
-        integer (ip):: n
-        integer (ip)::i
-        real (wp):: cf(n)
-        real (wp):: theta
-        cosine = 0.
-        do i=1,n
-            cosine = cosine+cf(i)*cos(i*theta)
-        enddo
-    end function cosine
+        integer (ip)           :: i,j !! Counters
+        real (wp), allocatable ::  w(:)
+
+        associate( n => size(x) )
+
+            allocate( w(n) )
+
+            associate( arg => acos(-1.0_wp)/(n+1) )
+                do j=1,n
+                    w(j) = 0.0_wp
+                    do i=1,n
+                        associate( sin_arg => real(i*j,kind=wp)*arg )
+                            w(j) = w(j)+x(i)*sin(sin_arg)
+                        end associate
+                    end do
+                end do
+            end associate
+        end associate
+
+        x = 2.0_wp * w
+
+        ! Free memory
+        deallocate(w)
+
+    end subroutine compute_sine_transform
+
+    pure function compute_cosine_transform(theta, cf) result (return_value)
+
+        real (wp), intent(in) :: theta
+        real (wp), intent(in) :: cf(:)
+        real (wp)             :: return_value
+
+        integer (ip)          :: i !! Counter
+
+        return_value = 0.0_wp
+
+        associate( n => size(cf) )
+            do i=1,n
+                return_value = return_value + cf(i)*cos(i*theta)
+            end do
+        end associate
+
+    end function compute_cosine_transform
 
 end program test_spharmt
