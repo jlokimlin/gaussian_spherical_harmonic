@@ -411,6 +411,8 @@ program test_spharmt
 
     call destroy_gaussian_spherical_harmonic(this)
 
+    print *, 0.1_wp**(precision(10.0_wp * epsilon(10.0_wp)))
+
 contains
 
     pure function compute_initial_unrotated_longitudinal_velocity(amp,thetad) result (return_value)

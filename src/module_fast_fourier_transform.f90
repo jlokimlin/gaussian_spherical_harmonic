@@ -234,15 +234,15 @@ contains
         !               data vector.
         !
         !-----------------------------------------------------------------------
-        integer (ip), intent(in)    :: inc
-        integer (ip), intent(in)    ::jump
-        integer (ip), intent(in)    ::n
-        integer (ip), intent(in)    ::lot
-        integer (ip), intent(in)    ::isign
-        integer (ip), intent(in) :: ifax(:)
-        real (wp),    intent(in)    :: trigs(:)
+        integer (ip), intent(in)     :: inc
+        integer (ip), intent(in)     :: jump
+        integer (ip), intent(in)     :: n
+        integer (ip), intent(in)     :: lot
+        integer (ip), intent(in)     :: isign
+        integer (ip), intent(in)     :: ifax(:)
+        real (wp),    intent(in)     :: trigs(:)
         real (wp),    intent(in out) :: a(*)
-        real (wp),    intent(in out) ::work(*)
+        real (wp),    intent(in out) :: work(*)
 
         !     dimension a(n),work(n),trigs(n),ifax(1)
         !
