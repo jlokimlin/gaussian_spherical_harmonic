@@ -23,113 +23,109 @@ module type_GaussianSphericalHarmonic
     public :: specsmooth
     public :: getuv
     public :: getvrtdiv
-    public :: sumnm,gaulw
+    public :: sumnm
+    public :: compute_latitudes_and_gaussian_weights
     public :: legend
 
-    type GaussianSphericalHarmonic
-
-        ! rsphere is radius of sphere in m.
-        real (wp)   :: RADIUS_OF_SPHERE = 0.0_wp
-
-        ! nlons is number of longitudes (not including cyclic point).
-        integer (ip) :: nlons = 0
-
-        ! nlats is number of gaussian latitudes.
-        integer (ip) :: nlats = 0
-
-        ! for fft.
-        real (wp), dimension(:), allocatable :: trigs
-        integer (ip), dimension(:), allocatable :: ifax
-
-        ! ntrunc is triangular truncation limit (e.g. 42 for T42 truncation)
-        integer (ip) :: ntrunc = 0
-
-        ! gaulats is sin(gaussian lats), weights are gaussian weights,
-        ! gwrc is gaussian weights divided by re*cos(lat)**2, lap is
-        ! the laplacian operatore -n*(n+1)/re**2 (where n is the degree
-        ! of the spherical harmonic),
-        ! ilap is the inverse laplacian (1/lap, set to zero for n=0).
-        real (wp), dimension(:), allocatable :: gaulats, weights, gwrc, lap, ilap
-
-        ! pnm is associated legendre polynomials, hnm is -(1-x**2)d(pnm)/dx,
-        ! where x = gaulats.
-        real (wp), dimension(:,:), allocatable :: pnm, hnm
-
-        ! indxm is zonal wavenumber index, indxn is spherical harmonic degree index.
-        integer (ip), dimension(:), allocatable :: indxm, indxn
-        logical :: initialized = .false.
-
+    type, public :: GaussianSphericalHarmonic
+        !---------------------------------------------------------------------------------
+        ! Class variables
+        !---------------------------------------------------------------------------------
+        integer (ip),               public :: NLONS = 0
+        integer (ip),               public :: NLATS = 0
+        integer (ip),               public :: NTRUNC = 0
+        integer (ip), allocatable, private :: indxm(:)
+        integer (ip), allocatable, private :: indxn(:)
+        integer (ip), allocatable, private :: ifax(:)
+        real (wp),                  public  :: RADIUS_OF_SPHERE = 0.0_wp
+        real (wp), allocatable, private :: trigs(:)
+        real (wp), allocatable, public  :: gaulats(:)
+        real (wp), allocatable, private :: weights(:)
+        real (wp), allocatable, private :: gwrc(:)
+        real (wp), allocatable, public  :: lap(:)
+        real (wp), allocatable, private :: ilap(:)
+        real (wp), allocatable, private :: pnm(:,:)
+        real (wp), allocatable, private :: hnm(:,:)
+        logical,                 private :: initialized = .false.
     end type GaussianSphericalHarmonic
 
 contains
 
     subroutine initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,re)
-
-        ! initialize a sphere object.
-
-        integer (ip), intent(in) :: nlon
-        integer (ip), intent(in) ::nlat
-        integer (ip), intent(in) ::ntrunc
-        real (wp), intent(in) :: re
+        !
+        ! Purpose:
+        !
+        ! To initialize an GaussianSphericalHarmonic object
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in out) :: this
-        real (wp), dimension(:), allocatable :: pnm_tmp
-        real (wp), dimension(:), allocatable ::hnm_tmp
-        real (wp), dimension(:), allocatable :: gaulats_tmp
-        real (wp), dimension(:), allocatable ::weights_tmp
-        integer (ip) :: nmdim
-        integer (ip) ::m
-        integer (ip) ::n
-        integer (ip) ::j
+        integer (ip),                      intent(in)     :: nlon
+        integer (ip),                      intent(in)     :: nlat
+        integer (ip),                      intent(in)     :: ntrunc
+        real (wp),                         intent(in)     :: re
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        integer (ip) ::m, n, j !! Counters
+        !--------------------------------------------------------------------------------
 
-
+        ! Set contants
         this%nlons = nlon
         this%nlats = nlat
         this%ntrunc = ntrunc
         this%RADIUS_OF_SPHERE = re
 
-        nmdim = (ntrunc+1)*(ntrunc+2)/2
+        associate( nmdim => (ntrunc+1)*(ntrunc+2)/2 )
 
-        allocate(gaulats_tmp(nlat))
-        allocate(weights_tmp(nlat))
-        call gaulw(gaulats_tmp,weights_tmp)
-        allocate(this%gwrc(nlat))
-        this%gwrc = weights_tmp/(re*(1.0_wp-gaulats_tmp**2))
-        allocate(this%gaulats(nlat))
-        allocate(this%weights(nlat))
-        this%gaulats = gaulats_tmp
-        this%weights = weights_tmp
-        deallocate(weights_tmp)
+            !--------------------------------------------------------------------------------
+            ! Allocate arrays
+            !--------------------------------------------------------------------------------
 
-        allocate(this%indxm(nmdim))
-        allocate(this%indxn(nmdim))
-        allocate(this%lap(nmdim))
-        allocate(this%ilap(nmdim))
+            allocate(this%gwrc(nlat))
+            allocate(this%gaulats(nlat))
+            allocate(this%weights(nlat))
+            allocate(this%indxm(nmdim))
+            allocate(this%indxn(nmdim))
+            allocate(this%lap(nmdim))
+            allocate(this%ilap(nmdim))
+            allocate(this%pnm(nmdim,nlat))
+            allocate(this%hnm(nmdim,nlat))
+            allocate(this%trigs((3*nlon/2)+1))
+            allocate(this%ifax(13))
 
-        this%indxm = (/((m,n=m,ntrunc),m=0,ntrunc)/)
-        this%indxn = (/((n,n=m,ntrunc),m=0,ntrunc)/)
-        this%lap(:)=-real(this%indxn(:), kind=wp)*real(this%indxn(:)+1, kind=wp)/re**2
-        this%ilap(1) = 0.
-        this%ilap(2:nmdim) = 1./this%lap(2:nmdim)
+            associate( &
+                gaulats => this%gaulats, &
+                weights => this%weights, &
+                gwrc => this%gwrc, &
+                indxm => this%indxm, &
+                indxn => this%indxn, &
+                lap => this%lap, &
+                ilap => this%ilap, &
+                pnm => this%pnm, &
+                hnm => this%hnm, &
+                trigs => this%trigs, &
+                ifax => this%ifax &
+                )
 
-        allocate(this%pnm(nmdim,nlat))
-        allocate(this%hnm(nmdim,nlat))
-        allocate(pnm_tmp(nmdim))
-        allocate(hnm_tmp(nmdim))
+                call compute_latitudes_and_gaussian_weights( gaulats, weights )
 
-        do j=1,nlat
-            call legend(gaulats_tmp(j),pnm_tmp,hnm_tmp)
-            this%pnm(:,j) = pnm_tmp(:)
-            this%hnm(:,j) = hnm_tmp(:)
-        end do
+                gwrc = weights/(re * (1.0_wp - (gaulats**2)))
+                indxm = [ ((m, n = m,ntrunc), m = 0, ntrunc) ]
+                indxn = [ ((n, n = m,ntrunc), m = 0, ntrunc) ]
+                lap(:)= -real(indxn(:), kind=wp) * real(indxn(:) + 1, kind=wp) / (re**2)
+                ilap(1) = 0.0_wp
+                ilap(2:nmdim) = 1.0_wp/lap(2:nmdim)
 
-        deallocate(gaulats_tmp)
-        deallocate(pnm_tmp)
-        deallocate(hnm_tmp)
+                do j = 1, nlat
+                    call legend( gaulats(j), pnm(:,j), hnm(:,j) )
+                end do
 
-        allocate(this%trigs((3*nlon/2)+1))
-        allocate(this%ifax(13))
-        call initialize_fft99(this%trigs,this%ifax,nlon)
+                call initialize_fft99( trigs, ifax, nlon)
 
+            end associate
+        end associate
 
         this%initialized = .true.
 
@@ -157,7 +153,7 @@ contains
 
     end subroutine destroy_gaussian_spherical_harmonic
 
-    subroutine gaulw(sinlats, wts)
+    subroutine compute_latitudes_and_gaussian_weights(sinlats, wts)
 
         ! compute sin of gaussian latitudes and gaussian weights.
         ! uses the iterative method presented in Numerical Recipes.
@@ -226,7 +222,7 @@ contains
 
     end do
 
-end subroutine gaulw
+end subroutine compute_latitudes_and_gaussian_weights
 
 subroutine LEGend(x,pmn,hmn)
     !
@@ -524,7 +520,7 @@ subroutine spharm(this, ugrid, anm, idir)
                 end do
     		
             end do
-    		
+
             ! == >  FOURIER TRANSFORM TO COMPUTE THE VALUES OF THE VARIABLE IN GRID
             !     SPACE at THE J-TH LATITUDE.
     		
