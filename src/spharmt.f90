@@ -6,8 +6,8 @@ module type_GaussianSphericalHarmonic
         stderr => ERROR_UNIT
 
     use module_fast_fourier_transform, only: &
-        fft991, &
-        set99
+        perform_fft991, &
+        initialize_fft99
 
     ! Explicit typing
     implicit none
@@ -74,8 +74,8 @@ contains
         class (GaussianSphericalHarmonic), intent(in out) :: this
         real, dimension(:), allocatable :: pnm_tmp
         real, dimension(:), allocatable ::hnm_tmp
-        double precision, dimension(:), allocatable :: gaulats_tmp
-        double precision, dimension(:), allocatable ::weights_tmp
+        real (wp), dimension(:), allocatable :: gaulats_tmp
+        real (wp), dimension(:), allocatable ::weights_tmp
         integer:: nmdim
         integer::m
         integer::n
@@ -125,7 +125,7 @@ contains
 
         allocate(this%trigs((3*nlon/2)+1))
         allocate(this%ifax(13))
-        call set99(this%trigs,this%ifax,nlon)
+        call initialize_fft99(this%trigs,this%ifax,nlon)
 
         this%initialized = .true.
 
@@ -158,8 +158,8 @@ contains
         ! compute sin of gaussian latitudes and gaussian weights.
         ! uses the iterative method presented in Numerical Recipes.
 
-        double precision, intent (in out), dimension(:) :: sinlats
-        double precision, intent (in out), dimension(:) :: wts
+        real (wp), intent (in out), dimension(:) :: sinlats
+        real (wp), intent (in out), dimension(:) :: wts
 
         integer:: itermax
         integer:: i
@@ -167,15 +167,15 @@ contains
         integer:: j
         integer:: nlat
         integer:: nprec
-        double precision:: pi
-        double precision:: pp
-        double precision:: p1
-        double precision:: p2
-        double precision:: p3
-        double precision:: z
-        double precision:: z1
-        double precision:: converg
-        double precision:: ten
+        real (wp):: pi
+        real (wp):: pp
+        real (wp):: p1
+        real (wp):: p2
+        real (wp):: p3
+        real (wp):: z
+        real (wp):: z1
+        real (wp):: converg
+        real (wp):: ten
 
 
         ten = 10.d0
@@ -244,7 +244,7 @@ subroutine LEGend(x,pmn,hmn)
 
     real, dimension(:), intent(in out) ::  pmn
     real, dimension(:), intent(in out) ::  hmn
-    double precision, intent(in) :: x
+    real (wp), intent(in) :: x
     integer:: m
     integer::n
     integer::nm
@@ -255,17 +255,17 @@ subroutine LEGend(x,pmn,hmn)
     integer::j
     integer::nmdim
     integer::ntrunc
-    double precision:: a
-    double precision:: b
-    double precision:: prod
-    double precision:: sinsq
-    double precision:: &
+    real (wp):: a
+    real (wp):: b
+    real (wp):: prod
+    real (wp):: sinsq
+    real (wp):: &
         eps
-    double precision::epsnmp1
-    double precision::epspmn
-    double precision:: pmnj
-    double precision:: pmnjm1
-    double precision:: pmnjm2
+    real (wp)::epsnmp1
+    real (wp)::epspmn
+    real (wp):: pmnj
+    real (wp):: pmnjm1
+    real (wp):: pmnjm2
 
 
     !**** SET PARAMETERS FOR ENTRY INTO THE RECURSIVE FORMULAE.
@@ -402,7 +402,7 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
                 end do
             end do
     		
-            call fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,-1)
+            call perform_fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,-1)
     		
             n = -1
             do j=1,nlats
@@ -427,7 +427,7 @@ subroutine perform_multiple_real_fft(this, data, coeff, idir)
                 end do
             end do
     		
-            call fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,1)
+            call perform_fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,1)
     		
             n = 0
             do j=1,nlats

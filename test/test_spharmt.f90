@@ -11,7 +11,7 @@ program test_spharmt
     !  flow in a shallow water model.
     !
     !  errors should be O(10E-5) or less in single-precision, O(10E-7) or less
-    !  in double precision.
+    !  in real (wp).
     !
     !
     !     the nonlinear shallow-water equations on the sphere are

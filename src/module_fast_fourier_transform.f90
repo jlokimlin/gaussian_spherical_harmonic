@@ -10,8 +10,8 @@ module module_fast_fourier_transform
 
     ! Everything is private unless stated otherwise
     private
-    public :: fft991
-    public :: set99
+    public :: perform_fft991
+    public :: initialize_fft99
 
 
 contains
@@ -32,7 +32,7 @@ contains
         !
         !              the package fft99f contains several user-level routines:
         !
-        !            subroutine set99
+        !            subroutine initialize_fft99
         !                an initialization routine that must be called once
         !                before a sequence of calls to the fft routines
         !                (provided that n is not changed).
@@ -50,10 +50,10 @@ contains
         !                   dimension ifax(13),trigs(3*n/2+1),a(m*(n+2)),
         !                  +          work(m*(n+1))
         !
-        !                   call set99 (trigs, ifax, n)
+        !                   call initialize_fft99 (trigs, ifax, n)
         !                   call fft99 (a,work,trigs,ifax,inc,jump,n,m,isign)
         !
-        !              see the individual write-ups for set99, fft99, and
+        !              see the individual write-ups for initialize_fft99, fft99, and
         !              fft991 below, for a detailed description of the
         !              arguments.
         !
@@ -63,7 +63,7 @@ contains
         !
         !-----------------------------------------------------------------------
         !
-        ! subroutine set99 (trigs, ifax, n)
+        ! subroutine initialize_fft99 (trigs, ifax, n)
         !
         ! purpose      a set-up routine for fft99 and fft991.  it need only be
         !              called once before a sequence of calls to the fft
@@ -92,7 +92,7 @@ contains
         ! on output    ifax
         !               contains the factorization of n/2.  ifax(1) is the
         !               number of factors, and the factors themselves are stored
-        !               in ifax(2),ifax(3),...  if set99 is called with n odd,
+        !               in ifax(2),ifax(3),...  if initialize_fft99 is called with n odd,
         !               or if n has any prime factors greater than 5, ifax(1)
         !               is set to -99.
         !
@@ -133,10 +133,10 @@ contains
         !               a work array of dimension m*(n+1)
         !
         !              trigs
-        !               an array set up by set99, which must be called first.
+        !               an array set up by initialize_fft99, which must be called first.
         !
         !              ifax
-        !               an array set up by set99, which must be called first.
+        !               an array set up by initialize_fft99, which must be called first.
         !
         !              inc
         !               the increment (in words) between successive elements of
@@ -333,7 +333,7 @@ contains
     !   ------------------------
 
 30  continue
-    call fft99a(a,work,trigs,inc,jump,n,lot)
+    call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
     igo=60
 
 !   complex transform
@@ -392,7 +392,7 @@ contains
    !   --------------------------
 
 130 continue
-    call fft99b(work,a,trigs,inc,jump,n,lot)
+    call perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
 
 140 continue
 
@@ -400,7 +400,7 @@ end subroutine fft99
 
 !##########################################################################
 
-subroutine fft99a (a,work,trigs,inc,jump,n,lot)
+subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    :: inc
     integer (ip), intent(in)    ::jump
     integer (ip), intent(in)    ::n
@@ -493,11 +493,11 @@ subroutine fft99a (a,work,trigs,inc,jump,n,lot)
         end do
     end if
 
-end subroutine fft99a
+end subroutine perform_preprocessing_step_for_fft99
 
 !##########################################################################
 
-subroutine fft99b (work,a,trigs,inc,jump,n,lot)
+subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    :: inc
     integer (ip), intent(in)    ::jump
     integer (ip), intent(in)    ::n
@@ -596,11 +596,11 @@ subroutine fft99b (work,a,trigs,inc,jump,n,lot)
         end do
     end if
 
-end subroutine fft99b
+end subroutine perform_postprocessing_step_for_fft99
 
 !##########################################################################
 
-subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
+subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     integer (ip), intent(in)    :: inc
     integer (ip), intent(in)    ::jump
     integer (ip), intent(in)    ::n
@@ -704,7 +704,7 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 !   ------------------------
 !
 30 continue
-   call fft99a(a,work,trigs,inc,jump,n,lot)
+   call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
    igo=60
    !
    !   complex transform
@@ -760,15 +760,15 @@ subroutine fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
    !     --------------------------
 
 130 continue
-    call fft99b (work,a,trigs,inc,jump,n,lot)
+    call perform_postprocessing_step_for_fft99 (work,a,trigs,inc,jump,n,lot)
 
 140 continue
 
-end subroutine fft991
+end subroutine perform_fft991
 
 !##########################################################################
 
-subroutine set99 (trigs, ifax, n)
+subroutine initialize_fft99 (trigs, ifax, n)
     integer (ip), intent(in)  :: n
     integer (ip), intent(out) :: ifax(:)
     real,    intent(out) :: trigs(:)
@@ -787,12 +787,12 @@ subroutine set99 (trigs, ifax, n)
     i = ifax(1)
     if (ifax(i+1) > 5 .or. n <= 4) ifax(1) = -99
     if (ifax(1) <= 0 ) then
-        write(6,*) ' set99 -- invalid n'
+        write(6,*) ' initialize_fft99 -- invalid n'
         stop
     end if
     call fftrig (trigs, n, mode)
 
-end subroutine set99
+end subroutine initialize_fft99
 
 !##########################################################################
 
