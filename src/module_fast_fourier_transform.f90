@@ -388,7 +388,7 @@ contains
        ia=ia+jump
        ib=ib+jump
    end do
-   go to 140
+   go to 1400
 
    !   postprocessing (isign=-1):
    !   --------------------------
@@ -396,7 +396,7 @@ contains
 130 continue
     call perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
 
-140 continue
+1400 continue
 
 end subroutine fft99
     !
@@ -885,7 +885,7 @@ subroutine fftrig (trigs,n,mode)
 
     real (wp) :: del
     real (wp) :: angle
-    real (wp) ::pi
+    real (wp), parameter :: PI = acos( -1.0_wp )
     integer (ip) :: imode
     integer (ip) :: nn
     integer (ip) :: nh
@@ -893,11 +893,10 @@ subroutine fftrig (trigs,n,mode)
     integer (ip) :: l
     integer (ip) :: la
 
-    pi = acos( -1.0_wp)
     imode=iabs(mode)
     nn=n
     if (imode>1.and.imode<6) nn=n/2
-    del=(pi+pi)/real(nn, kind=wp)
+    del=(2.0_wp * PI)/real(nn, kind=wp)
     l=nn+nn
     do i=1,l,2
         angle=0.5_wp*real(i-1, kind=wp)*del
@@ -923,7 +922,7 @@ subroutine fftrig (trigs,n,mode)
     if (mode/=5) then
         do i=2,nn
             angle=real(i-1,kind=wp)*del
-            trigs(la+i)=2.0*sin(angle)
+            trigs(la+i)=2.0_wp*sin(angle)
         end do
         return
     end if
