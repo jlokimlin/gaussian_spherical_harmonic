@@ -1,6 +1,7 @@
 !
-!  Test program for spharmt module - non-linear steady-state geostropic
-!  flow in a shallow water model.
+!  Test program for GaussianSphericalHarmonic
+!
+!  Non-linear steady-state geostropic flow in a shallow water model.
 !
 !  errors should be O(10E-5) or less in single-precision, O(10E-7) or less
 !  in real (wp).
@@ -101,21 +102,20 @@ program test
     real (wp), dimension(nlon,nlat) ::divg
     real (wp), dimension(nlon,nlat) ::scrg1
     real (wp), dimension(nlon,nlat) ::scrg2
-    integer (ip)::  itmax
+    integer (ip)::  MAXIMUM_NUMBER_OF_TIME_ITERATIONS
     integer (ip)::mprint
     integer (ip)::nl
     integer (ip)::nlm1
     integer (ip)::nlm2
     integer (ip)::i
     integer (ip)::j
-    integer (ip)::ncycle
+    integer (ip)::cycle_number
     integer (ip)::&
         nsav1
     integer (ip)::nsav2
     integer (ip)::nold
     integer (ip)::nnow
     integer (ip)::nnew
-    real (wp):: lambda
     real (wp)::lhat
     real (wp)::phlt(361)
     real (wp)::uhat
@@ -123,7 +123,7 @@ program test
     real (wp)::uzero
     real (wp)::pzero
     real (wp)::PI
-    real (wp)::hpi
+    real (wp)::HALF_PI
     real (wp)::dtr
     real (wp)::omega
     real (wp)::alphad
@@ -133,7 +133,6 @@ program test
     real (wp)::dt
     real (wp)::cfn
     real (wp)::LATITUDINAL_MESH
-    real (wp)::theta
     real (wp)::sint
     real (wp)::cost
     real (wp)::cos_a
@@ -163,10 +162,16 @@ program test
     real (wp)::pmax
     type (GaussianSphericalHarmonic):: this
 
-    print *,'triangular trunction T',ntrunc
-    print *,nlat,' gaussian latitudes'
+    write( stdout, '(A)') 'Test program for GaussianSphericalHarmonic'
+    write( stdout, '(A)') ' '
+    write( stdout, '(A)') 'Non-linear steady-state geostropic flow in a shallow water model'
+    write( stdout, '(A)') ' '
+    write( stdout, '(A,I11)') 'Triangular trunction number =', ntrunc
+    write( stdout, '(A,I11)') 'Number of gaussian latitudes = ', nlat
+    write( stdout, '(A)') ' '
+
     PI = acos( -1.0_wp )
-    hpi = PI/2.0_wp
+    HALF_PI = PI/2.0_wp
     dtr = PI/180.0_wp
     aa = 6.37122e+6
     omega = 7.292e-5
@@ -177,8 +182,8 @@ program test
     alpha = dtr*alphad
 
     dt = 300.0_wp
-    itmax = nint(86400.0_wp * 5.0_wp/dt, kind=ip)
-    mprint = itmax/10
+    MAXIMUM_NUMBER_OF_TIME_ITERATIONS = nint(86400.0_wp * 5.0_wp/dt, kind=ip)
+    mprint = MAXIMUM_NUMBER_OF_TIME_ITERATIONS/10
 
     !     compute the derivative of the unrotated geopotential
     !     p as a function of latitude
@@ -186,14 +191,15 @@ program test
     nl = 91
     nlm1 = nl-1
     nlm2 = nl-2
-    cfn = 1./nlm1
+    cfn = 1.0_wp/nlm1
     LATITUDINAL_MESH = PI/nlm1
     do i=1,nlm2
-        theta = real(i, kind=wp) * LATITUDINAL_MESH
-        sint = sin(theta)
-        cost = cos(theta)
-        uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-theta)
-        phlt(i) = cfn*cost*uhat*(uhat/sint+aa*fzero)
+        associate( theta => real(i, kind=wp) * LATITUDINAL_MESH )
+            sint = sin(theta)
+            cost = cos(theta)
+            uhat = compute_initial_unrotated_longitudinal_velocity(uzero,HALF_PI-theta)
+            phlt(i) = cfn*cost*uhat*(uhat/sint+aa*fzero)
+        end associate
     end do
 
     !     compute sine transform of the derivative of the geopotential
@@ -226,9 +232,10 @@ program test
     call initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,aa)
 
     do j=1,nlon
-        lambda = real(j - 1, kind=wp) * LONGITUDINAL_MESH
-        cos_l = cos(lambda)
-        sin_l = sin(lambda)
+        associate( lambda => real(j - 1, kind=wp) * LONGITUDINAL_MESH )
+            cos_l = cos(lambda)
+            sin_l = sin(lambda)
+        end associate
         do i = 1, nlat
 
             !     lambda is longitude, theta is colatitude, and pi/2-theta is
@@ -236,30 +243,31 @@ program test
             !     and colatitude on the unrotated grid. see text starting at
             !     equation (3.10)
             !
-            theta = hpi-asin(this%gaulats(i))
-            cos_t = cos(theta)
-            sin_t = sin(theta)
-            sint = cos_a*cos_t+sin_a*sin_t*cos_l
-            cthclh = cos_a*sin_t*cos_l-sin_a*cos_t
-            cthslh = sin_t*sin_l
-            lhat = atanxy(cthclh,cthslh)
-            clh = cos(lhat)
-            slh = sin(lhat)
-            cost = clh*cthclh+slh*cthslh
-            that = atanxy(sint,cost)
-            uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-that)
-            pxact(j,i) = compute_cosine_transform(that,phlt)
-            uxact(j,i) = uhat*(cos_a*sin_l*slh+cos_l*clh)
-            vxact(j,i) = uhat*(cos_a*cos_l*slh*cos_t-clh*sin_l*cos_t+sin_a*slh*sin_t)
-            f(j,i) = fzero*sint
-            coslat(j,i) = sqrt(1.0_wp - this%gaulats(i)**2)
+            associate( theta => HALF_PI-asin(this%gaulats(i)) )
+                cos_t = cos(theta)
+                sin_t = sin(theta)
+                sint = cos_a*cos_t+sin_a*sin_t*cos_l
+                cthclh = cos_a*sin_t*cos_l-sin_a*cos_t
+                cthslh = sin_t*sin_l
+                lhat = atanxy(cthclh,cthslh)
+                clh = cos(lhat)
+                slh = sin(lhat)
+                cost = clh*cthclh+slh*cthslh
+                that = atanxy(sint,cost)
+                uhat = compute_initial_unrotated_longitudinal_velocity(uzero,HALF_PI-that)
+                pxact(j,i) = compute_cosine_transform(that,phlt)
+                uxact(j,i) = uhat*(cos_a*sin_l*slh+cos_l*clh)
+                vxact(j,i) = uhat*(cos_a*cos_l*slh*cos_t-clh*sin_l*cos_t+sin_a*slh*sin_t)
+                f(j,i) = fzero*sint
+                coslat(j,i) = sqrt(1.0_wp - this%gaulats(i)**2)
+            end associate
         end do
     end do
 
-    vmax = 0.
-    pmax = 0.
-    v2max = 0.
-    p2max = 0.
+    vmax = 0.0_wp
+    pmax = 0.0_wp
+    v2max = 0.0_wp
+    p2max = 0.0_wp
     do j=1,nlat
         do i=1,nlon
             v2max = v2max+uxact(i,j)**2+vxact(i,j)**2
@@ -290,9 +298,9 @@ program test
     nnow = 2
     nold = 3
 
-    do ncycle = 0, itmax
+    do cycle_number = 0, MAXIMUM_NUMBER_OF_TIME_ITERATIONS
 
-        time = real(ncycle, kind=wp)*dt
+        time = real(cycle_number, kind=wp)*dt
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
@@ -305,13 +313,13 @@ program test
 
         !==> compute error statistics.
 
-        if (mod(ncycle,mprint) == 0) then
+        if (mod(cycle_number,mprint) == 0) then
             call perform_spherical_harmonic_transform(this,divg,divnm,-1)
             u = ug/coslat
             v = vg/coslat
             p = pg
             htime = time/3600.0_wp
-            write(*,390) ncycle,htime,dt,nlat,nlon,ntrunc,omega,pzero,uzero,alphad
+            write(stdout,390) cycle_number,htime,dt,nlat,nlon,ntrunc,omega,pzero,uzero,alphad
 
 390         format(//' steady nonlinear rotated flow:',/    &
                 ' cycle number              ',i10,     &
@@ -344,7 +352,7 @@ program test
             dpmax = sqrt(dpmax/p2max)
             evmax = evmax/vmax
             epmax = epmax/pmax
-            write(*,391) evmax,epmax,dvmax,dpmax,dvgm
+            write(stdout,391) evmax,epmax,dvmax,dpmax,dvgm
 391         format(' max error in velocity',1pe15.6,&
                 ' max error in geopot. ',1pe15.6,/&
                 ' l2 error in velocity ',1pe15.6,&
@@ -371,7 +379,7 @@ program test
 
         !==> forward euler, then 2nd-order adams-bashforth time steps to start.
 
-        select case (ncycle)
+        select case (cycle_number)
             case (0)
                 dvrtdtnm(:,nnow) = dvrtdtnm(:,nnew)
                 dvrtdtnm(:,nold) = dvrtdtnm(:,nnew)
@@ -413,8 +421,6 @@ program test
     !==> deallocate pointers in sphere object.
 
     call destroy_gaussian_spherical_harmonic(this)
-
-    print *, 0.1_wp**(precision(10.0_wp * epsilon(10.0_wp)))
 
 contains
 
