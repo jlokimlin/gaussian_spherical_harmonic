@@ -300,7 +300,7 @@ contains
         nx=n+1
         nh=n/2
         ink=inc+inc
-        if (isign == +1) go to 30
+        if (isign == +1) goto 30
 
         !     if necessary, transfer data to work area
         igo=50
@@ -320,7 +320,7 @@ contains
         end do
         !
         igo=60
-        go to 40
+        goto 40
     !
     !   preprocessing (isign=+1)
     !   ------------------------
@@ -336,12 +336,12 @@ contains
    ia=1
    la=1
    do k=1,nfax
-       if (igo == 60) go to 60
+       if (igo == 60) goto 60
 50 continue
    call vpassm (a(ia),a(ia+inc),work(1),work(2),trigs, &
        ink,2,jump,nx,lot,nh,ifax(k+1),la)
    igo=60
-   go to 70
+   goto 70
 60 continue
    call vpassm (work(1),work(2),a(ia),a(ia+inc),trigs, &
        2,ink,nx,jump,lot,nh,ifax(k+1),la)
@@ -350,7 +350,7 @@ contains
    la=la*ifax(k+1)
    end do
 
-   if (isign == -1) go to 130
+   if (isign == -1) goto 130
 
    ! if necessary, transfer data from work area
    if (mod(nfax,2)/=1) then
@@ -376,7 +376,7 @@ contains
        a(ib+inc)=0.0_wp
        ib=ib+jump
    end do
-   go to 14011
+   goto 14011
 
    !     postprocessing (isign=-1):
    !     --------------------------
@@ -434,55 +434,55 @@ contains
       integer (ip) :: item
 
       nn=n
-      if (iabs(mode) == 1) go to 10
-      if (iabs(mode) == 8) go to 10
+      if (iabs(mode) == 1) goto 10
+      if (iabs(mode) == 8) goto 10
       nn=n/2
-      if ((nn+nn) == n) go to 10
+      if ((nn+nn) == n) goto 10
       ifax(1)=-99
       return
 10    k=1
       !     test for factors of 4
-20    if (mod(nn,4)/=0) go to 30
+20    if (mod(nn,4)/=0) goto 30
       k=k+1
       ifax(k)=4
       nn=nn/4
-      if (nn == 1) go to 80
-      go to 20
+      if (nn == 1) goto 80
+      goto 20
       !     test for extra factor of 2
-30    if (mod(nn,2)/=0) go to 40
+30    if (mod(nn,2)/=0) goto 40
       k=k+1
       ifax(k)=2
       nn=nn/2
-      if (nn == 1) go to 80
+      if (nn == 1) goto 80
       !     test for factors of 3
-40    if (mod(nn,3)/=0) go to 50
+40    if (mod(nn,3)/=0) goto 50
       k=k+1
       ifax(k)=3
       nn=nn/3
-      if (nn == 1) go to 80
-      go to 40
+      if (nn == 1) goto 80
+      goto 40
       !     now find remaining factors
 50    l=5
       inc=2
       !     inc alternately takes on values 2 and 4
-60    if (mod(nn,l)/=0) go to 70
+60    if (mod(nn,l)/=0) goto 70
       k=k+1
       ifax(k)=l
       nn=nn/l
-      if (nn == 1) go to 80
-      go to 60
+      if (nn == 1) goto 80
+      goto 60
 70    l=l+inc
       inc=6-inc
-      go to 60
+      goto 60
 80    ifax(1)=k-1
       !     ifax(1) contains number of factors
       nfax=ifax(1)
       !     sort factors into ascending order
-      if (nfax == 1) go to 11011
+      if (nfax == 1) goto 11011
       do 1001 ii=2,nfax
           istop=nfax+2-ii
           do 90 i=2,istop
-              if (ifax(i+1)>=ifax(i)) go to 90
+              if (ifax(i+1)>=ifax(i)) goto 90
               item=ifax(i)
               ifax(i)=ifax(i+1)
               ifax(i+1)=item
@@ -636,7 +636,7 @@ contains
       jbase=0
       igo=ifac-1
       if (igo>4) return
-      !del  go to (10,50,90,130),igo
+      !del  goto (10,50,90,130),igo
 
       select case (igo)
 
