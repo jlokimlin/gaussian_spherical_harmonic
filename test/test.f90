@@ -1,74 +1,77 @@
-program test_spharmt
+!
+!  Test program for spharmt module - non-linear steady-state geostropic
+!  flow in a shallow water model.
+!
+!  errors should be O(10E-5) or less in single-precision, O(10E-7) or less
+!  in real (wp).
+!
+!
+!     the nonlinear shallow-water equations on the sphere are
+!     solved using a spectral method based on the spherical harmonics.
+!     the method is described in the paper:
+!
+! [1] p. n. swarztrauber, spectral transform methods for solving
+!     the shallow-water equations on the sphere, p.n. swarztrauber,
+!     monthly weather review, vol. 124, no. 4, april 1996, pp. 730-744.
+!
+!     this program implements test case 3 (steady nonlinear rotated flow)
+!     in the paper:
+!
+! [2] d.l. williamson, j.b. drake, j.j. hack, r. jakob, and
+!     p.n. swarztrauber, j. comp. phys., a standard test set
+!     for numerical approximations to the shallow-water
+!     equations in spherical geometry, j. comp. phys.,
+!     vol. 102, no. 1, sept. 1992, pp. 211-224.
+!
+! definitions:
+!
+!
+!     nlat          number of latitudes
+!     nlon          number of distinct longitudes
+!     ntrunc        max wave number
+!     omega         rotation rate of earth in radians per second
+!     aa            radius of earth in meters
+!     pzero         mean height of geopotential
+!     uzero         maximum velocity
+!     alpha         tilt angle of the rotated grid
+!     ncycle        cycle number
+!     time          model time in seconds
+!     dt            time step
+!     lambda        longitude
+!     theta         colatitude
+!
+!   the second dimension of the following two dimensional arrays
+!   corresponds to the latitude index with values j=1,...,nlat
+!   going from north to south.
+!   the second dimension is longitude with values i=1,...,nlon
+!   where i=1 corresponds to zero longitude and j=nlon corresponds
+!   to 2pi minus 2pi/nlon.
+!
+!     u(i,j)       east longitudinal velocity component at t=time
+!     v(i,j)       latitudinal velocity component at t=time
+!     p(i,j)       +pzero = geopotential at t=time
+!
+!     divg(i,j)    divergence (d/dtheta (cos(theta) v)
+!                                          + du/dlambda)/cos(theta)
+!     vrtg(i,j)    vorticity  (d/dtheta (cos(theta) u)
+!                                          - dv/dlambda)/cos(theta)
+!
+!     uxact(i,j)   the "exact" longitudinal velocity component
+!     vxact(i,j)   the "exact" latitudinal  velocity component
+!     pxact(i,j)   the "exact" geopotential
+!
+program test
 
     use, intrinsic :: iso_fortran_env, only: &
         wp     => REAL64, &
         ip     => INT32, &
-        stderr => ERROR_UNIT
+        stdout => OUTPUT_UNIT
 
     use type_GaussianSphericalHarmonic
-    !
-    !  Test program for spharmt module - non-linear steady-state geostropic
-    !  flow in a shallow water model.
-    !
-    !  errors should be O(10E-5) or less in single-precision, O(10E-7) or less
-    !  in real (wp).
-    !
-    !
-    !     the nonlinear shallow-water equations on the sphere are
-    !     solved using a spectral method based on the spherical harmonics.
-    !     the method is described in the paper:
-    !
-    ! [1] p. n. swarztrauber, spectral transform methods for solving
-    !     the shallow-water equations on the sphere, p.n. swarztrauber,
-    !     monthly weather review, vol. 124, no. 4, april 1996, pp. 730-744.
-    !
-    !     this program implements test case 3 (steady nonlinear rotated flow)
-    !     in the paper:
-    !
-    ! [2] d.l. williamson, j.b. drake, j.j. hack, r. jakob, and
-    !     p.n. swarztrauber, j. comp. phys., a standard test set
-    !     for numerical approximations to the shallow-water
-    !     equations in spherical geometry, j. comp. phys.,
-    !     vol. 102, no. 1, sept. 1992, pp. 211-224.
-    !
-    ! definitions:
-    !
-    !
-    !     nlat          number of latitudes
-    !     nlon          number of distinct longitudes
-    !     ntrunc        max wave number
-    !     omega         rotation rate of earth in radians per second
-    !     aa            radius of earth in meters
-    !     pzero         mean height of geopotential
-    !     uzero         maximum velocity
-    !     alpha         tilt angle of the rotated grid
-    !     ncycle        cycle number
-    !     time          model time in seconds
-    !     dt            time step
-    !     lambda        longitude
-    !     theta         colatitude
-    !
-    !   the second dimension of the following two dimensional arrays
-    !   corresponds to the latitude index with values j=1,...,nlat
-    !   going from north to south.
-    !   the second dimension is longitude with values i=1,...,nlon
-    !   where i=1 corresponds to zero longitude and j=nlon corresponds
-    !   to 2pi minus 2pi/nlon.
-    !
-    !     u(i,j)       east longitudinal velocity component at t=time
-    !     v(i,j)       latitudinal velocity component at t=time
-    !     p(i,j)       +pzero = geopotential at t=time
-    !
-    !     divg(i,j)    divergence (d/dtheta (cos(theta) v)
-    !                                          + du/dlambda)/cos(theta)
-    !     vrtg(i,j)    vorticity  (d/dtheta (cos(theta) u)
-    !                                          - dv/dlambda)/cos(theta)
-    !
-    !     uxact(i,j)   the "exact" longitudinal velocity component
-    !     vxact(i,j)   the "exact" latitudinal  velocity component
-    !     pxact(i,j)   the "exact" geopotential
-    !
+
+    ! Explicit typing only
     implicit none
+
     integer (ip), parameter :: nlon=128
     integer (ip), parameter :: nlat=nlon/2
     integer (ip), parameter :: ntrunc=42
@@ -119,7 +122,7 @@ program test_spharmt
     real (wp)::aa
     real (wp)::uzero
     real (wp)::pzero
-    real (wp)::pi
+    real (wp)::PI
     real (wp)::hpi
     real (wp)::dtr
     real (wp)::omega
@@ -129,22 +132,22 @@ program test_spharmt
     real (wp)::fzero
     real (wp)::dt
     real (wp)::cfn
-    real (wp)::dlath
+    real (wp)::LATITUDINAL_MESH
     real (wp)::theta
-    real (wp)::sth
-    real (wp)::cth
-    real (wp)::ca
-    real (wp)::sa
-    real (wp)::dlam
-    real (wp)::st
-    real (wp)::ct
+    real (wp)::sint
+    real (wp)::cost
+    real (wp)::cos_a
+    real (wp)::sin_a
+    real (wp)::LONGITUDINAL_MESH
+    real (wp)::cos_t
+    real (wp)::sin_t
     real (wp)::cthclh
     real (wp)::cthslh
     real (wp)::&
         clh
     real (wp)::time
     real (wp)::that
-    real (wp)::sl
+    real (wp)::sin_l
     real (wp)::slh
     real (wp)::evmax
     real (wp)::epmax
@@ -152,7 +155,7 @@ program test_spharmt
     real (wp)::dpmax
     real (wp)::htime
     real (wp)::dvgm
-    real (wp)::cl
+    real (wp)::cos_l
     real (wp)::v2max
     real (wp)::p2max
     real (wp)::&
@@ -162,9 +165,9 @@ program test_spharmt
 
     print *,'triangular trunction T',ntrunc
     print *,nlat,' gaussian latitudes'
-    pi = acos( -1.0_wp )
-    hpi = pi/2.0_wp
-    dtr = pi/180.0_wp
+    PI = acos( -1.0_wp )
+    hpi = PI/2.0_wp
+    dtr = PI/180.0_wp
     aa = 6.37122e+6
     omega = 7.292e-5
     fzero = omega+omega
@@ -184,13 +187,13 @@ program test_spharmt
     nlm1 = nl-1
     nlm2 = nl-2
     cfn = 1./nlm1
-    dlath = pi/nlm1
+    LATITUDINAL_MESH = PI/nlm1
     do i=1,nlm2
-        theta = i*dlath
-        sth = sin(theta)
-        cth = cos(theta)
+        theta = real(i, kind=wp) * LATITUDINAL_MESH
+        sint = sin(theta)
+        cost = cos(theta)
         uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-theta)
-        phlt(i) = cfn*cth*uhat*(uhat/sth+aa*fzero)
+        phlt(i) = cfn*cost*uhat*(uhat/sint+aa*fzero)
     end do
 
     !     compute sine transform of the derivative of the geopotential
@@ -214,19 +217,19 @@ program test_spharmt
     !     and latitudinal velocities u and v as well as the
     !     geopotential p and coriolis f on the rotated grid.
     !
-    ca = cos(alpha)
-    sa = sin(alpha)
-    dlam = (pi+pi)/nlon
+    cos_a = cos(alpha)
+    sin_a = sin(alpha)
+    LONGITUDINAL_MESH = (2.0_wp * PI)/nlon
 
     !  initialize sphere derived data type.
 
     call initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,aa)
 
     do j=1,nlon
-        lambda = (j-1)*dlam
-        cl = cos(lambda)
-        sl = sin(lambda)
-        do i=1,nlat
+        lambda = real(j - 1, kind=wp) * LONGITUDINAL_MESH
+        cos_l = cos(lambda)
+        sin_l = sin(lambda)
+        do i = 1, nlat
 
             !     lambda is longitude, theta is colatitude, and pi/2-theta is
             !     latitude on the rotated grid. lhat and that are longitude
@@ -234,21 +237,21 @@ program test_spharmt
             !     equation (3.10)
             !
             theta = hpi-asin(this%gaulats(i))
-            st = cos(theta)
-            ct = sin(theta)
-            sth = ca*st+sa*ct*cl
-            cthclh = ca*ct*cl-sa*st
-            cthslh = ct*sl
+            cos_t = cos(theta)
+            sin_t = sin(theta)
+            sint = cos_a*cos_t+sin_a*sin_t*cos_l
+            cthclh = cos_a*sin_t*cos_l-sin_a*cos_t
+            cthslh = sin_t*sin_l
             lhat = atanxy(cthclh,cthslh)
             clh = cos(lhat)
             slh = sin(lhat)
-            cth = clh*cthclh+slh*cthslh
-            that = atanxy(sth,cth)
+            cost = clh*cthclh+slh*cthslh
+            that = atanxy(sint,cost)
             uhat = compute_initial_unrotated_longitudinal_velocity(uzero,hpi-that)
             pxact(j,i) = compute_cosine_transform(that,phlt)
-            uxact(j,i) = uhat*(ca*sl*slh+cl*clh)
-            vxact(j,i) = uhat*(ca*cl*slh*st-clh*sl*st+sa*slh*ct)
-            f(j,i) = fzero*sth
+            uxact(j,i) = uhat*(cos_a*sin_l*slh+cos_l*clh)
+            vxact(j,i) = uhat*(cos_a*cos_l*slh*cos_t-clh*sin_l*cos_t+sin_a*slh*sin_t)
+            f(j,i) = fzero*sint
             coslat(j,i) = sqrt(1.0_wp - this%gaulats(i)**2)
         end do
     end do
@@ -504,4 +507,4 @@ contains
 
     end function compute_cosine_transform
 
-end program test_spharmt
+end program test
