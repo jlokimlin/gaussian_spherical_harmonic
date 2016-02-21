@@ -644,7 +644,7 @@ contains
           !   coding for factor 2
 
           case (1)
-10            ia=1
+              ia=1
               ja=1
               ib=ia+iink
               jb=ja+jink
@@ -658,11 +658,11 @@ contains
                       d(jb+j)=b(ia+i)-b(ib+i)
                       i=i+inc3
                       j=j+inc4
-15                continue
+
                   end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
-20            continue
+
               end do
               if (la == m) return
               la1=la+1
@@ -681,21 +681,21 @@ contains
                           d(jb+j)=s1*(a(ia+i)-a(ib+i))+c1*(b(ia+i)-b(ib+i))
                           i=i+inc3
                           j=j+inc4
-25                    continue
+
                       end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
-30                continue
+
                   end do
                   jbase=jbase+jump
-40            continue
+
               end do
           !     return
 
           !   coding for factor 3
 
           case (2)
-50            ia=1
+              ia=1
               ja=1
               ib=ia+iink
               jb=ja+jink
@@ -713,11 +713,9 @@ contains
                       d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i)))
                       i=i+inc3
                       j=j+inc4
-55                continue
                   end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
-6060          continue
               end do
               if (la == m) return
               la1=la+1
@@ -749,21 +747,18 @@ contains
                               +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
                           i=i+inc3
                           j=j+inc4
-65                    continue
                       end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
-7070              continue
                   end do
                   jbase=jbase+jump
-8080          continue
               end do
           !     return
 
           !   coding for factor 4
 
           case (3)
-90            ia=1
+              ia=1
               ja=1
               ib=ia+iink
               jb=ja+jink
@@ -785,11 +780,9 @@ contains
                       d(jd+j)=(b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i))
                       i=i+inc3
                       j=j+inc4
-95                continue
                   end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
-100           continue
               end do
               if (la == m) return
               la1=la+1
@@ -830,21 +823,18 @@ contains
                               +c3*((b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i)))
                           i=i+inc3
                           j=j+inc4
-105                   continue
                       end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
-110               continue
                   end do
                   jbase=jbase+jump
-120           continue
               end do
           !     return
 
           !   coding for factor 5
 
           case (4)
-130           ia=1
+              ia=1
               ja=1
               ib=ia+iink
               jb=ja+jink
@@ -878,11 +868,9 @@ contains
                           -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
                       i=i+inc3
                       j=j+inc4
-135               continue
                   end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
-140           continue
               end do
               if (la == m) return
               la1=la+1
@@ -948,14 +936,11 @@ contains
                               -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
                           i=i+inc3
                           j=j+inc4
-145                   continue
                       end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
-150               continue
                   end do
                   jbase=jbase+jump
-160           continue
               end do
 
       end select
