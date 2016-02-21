@@ -450,14 +450,16 @@ contains
                         end do
                     end do
     		
-                    call perform_fft991(input_output_data,workspace,trigs,ifax,1,nlons+2,nlons,nlats,-1)
+                    call perform_fft991( &
+                        input_output_data, workspace, trigs, ifax, 1, nlons+2, nlons, nlats, -1 )
     		
                     n = -1
                     do j=1,nlats
                         do m=1,(nlons/2)+1
                             n = n + 2
                             if (m <= mwaves) then
-                                coeff(m,j) = cmplx(input_output_data(n),input_output_data(n+1), kind=wp)
+                                coeff(m,j) = &
+                                    cmplx(input_output_data(n),input_output_data(n+1), kind=wp)
                             end if
                         end do
                     end do
@@ -628,8 +630,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in getuv!'
-            stop
+            error stop 'uninitialized sphere object in getuv!'
         end if
 
         associate( &
@@ -942,4 +943,4 @@ contains
     !
     !*****************************************************************************************
     !
-end module type_GaussianSphericalHarmonic
+  end module type_GaussianSphericalHarmonic

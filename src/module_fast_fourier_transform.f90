@@ -441,14 +441,14 @@ contains
       return
 10    k=1
       !     test for factors of 4
-20    if (mod(nn,4)/=0) goto 30
+20    if (mod(nn,4)/=0) goto 30333
       k=k+1
       ifax(k)=4
       nn=nn/4
       if (nn == 1) goto 80
       goto 20
       !     test for extra factor of 2
-30    if (mod(nn,2)/=0) goto 40
+30333 if (mod(nn,2)/=0) goto 40
       k=k+1
       ifax(k)=2
       nn=nn/2
@@ -478,15 +478,17 @@ contains
       nfax=ifax(1)
       !     sort factors into ascending order
       if (nfax == 1) goto 11011
-      do 1001 ii=2,nfax
+      do ii=2,nfax
           istop=nfax+2-ii
-          do 90 i=2,istop
+          do i=2,istop
               if (ifax(i+1)>=ifax(i)) goto 90
               item=ifax(i)
               ifax(i)=ifax(i+1)
               ifax(i+1)=item
 90        continue
+          end do
 1001  continue
+      end do
 11011 continue
 
   end subroutine fax
