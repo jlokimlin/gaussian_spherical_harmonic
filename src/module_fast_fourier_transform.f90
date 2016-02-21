@@ -309,7 +309,7 @@ contains
         nx=n+1
         nh=n/2
         ink=inc+inc
-        if (isign == +1) go to 30
+        if (isign == +1) go to 3033
 
         !   if necessary, transfer data to work area
         igo=50
@@ -334,7 +334,7 @@ contains
     !   preprocessing (isign=+1)
     !   ------------------------
 
-30  continue
+3033  continue
     call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
     igo=60
 
@@ -760,7 +760,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
        a(ib+inc)=0.0_wp
        ib=ib+jump
    end do
-   go to 140
+   go to 14011
 
    !     postprocessing (isign=-1):
    !     --------------------------
@@ -768,7 +768,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 130 continue
     call perform_postprocessing_step_for_fft99 (work,a,trigs,inc,jump,n,lot)
 
-140 continue
+14011 continue
 
 end subroutine perform_fft991
     !
@@ -862,8 +862,8 @@ subroutine fax (ifax,n,mode)
     !     ifax(1) contains number of factors
     nfax=ifax(1)
     !     sort factors into ascending order
-    if (nfax == 1) go to 110
-    do 100 ii=2,nfax
+    if (nfax == 1) go to 11011
+    do 1001 ii=2,nfax
         istop=nfax+2-ii
         do 90 i=2,istop
             if (ifax(i+1)>=ifax(i)) go to 90
@@ -871,8 +871,8 @@ subroutine fax (ifax,n,mode)
             ifax(i)=ifax(i+1)
             ifax(i+1)=item
 90      continue
-100 continue
-110 continue
+1001 continue
+11011 continue
 
 end subroutine fax
     !
@@ -1079,7 +1079,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
             jb=ja+jink
             ic=ib+iink
             jc=jb+jink
-            do 60 l=1,la
+            do 6060 l=1,la
                 i=ibase
                 j=jbase
                 do 55 ijk=1,lot
@@ -1094,18 +1094,18 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
 55              continue
                 ibase=ibase+inc1
                 jbase=jbase+inc2
-60          continue
+6060          continue
             if (la == m) return
             la1=la+1
             jbase=jbase+jump
-            do 80 k=la1,m,la
+            do 8080 k=la1,m,la
                 kb=k+k-2
                 kc=kb+kb
                 c1=trigs(kb+1)
                 s1=trigs(kb+2)
                 c2=trigs(kc+1)
                 s2=trigs(kc+2)
-                do 70 l=1,la
+                do 7070 l=1,la
                     i=ibase
                     j=jbase
                     do 65 ijk=1,lot
@@ -1128,9 +1128,9 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
 65                  continue
                     ibase=ibase+inc1
                     jbase=jbase+inc2
-70              continue
+7070              continue
                 jbase=jbase+jump
-80          continue
+8080          continue
         !     return
 
         !   coding for factor 4
