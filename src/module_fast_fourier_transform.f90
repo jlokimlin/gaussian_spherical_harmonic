@@ -15,9 +15,411 @@ module module_fast_fourier_transform
 
 
 contains
-     !
-     !*****************************************************************************************
-     !
+    !
+    !*****************************************************************************************
+    !
+    subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
+        !
+        !
+        !     Purpose:
+        !
+        !     multiple version of "vpassa"
+        !     performs one pass through data
+        !     as part of multiple complex fft routine
+        !     a is first real input vector
+        !     b is first imaginary input vector
+        !     c is first real output vector
+        !     d is first imaginary output vector
+        !     trigs is precalculated table of sines " cosines
+        !     inc1 is addressing increment for a and b
+        !     inc2 is addressing increment for c and d
+        !     inc3 is addressing increment between a"s & b"s
+        !     inc4 is addressing increment between c"s & d"s
+        !     lot is the number of vectors
+        !     n is length of vectors
+        !     ifac is current factor of n
+        !     la is product of previous factors
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        real (wp),    intent(in)  :: a(n)
+        real (wp),    intent(in)  :: b(n)
+        real (wp),    intent(out) :: c(n)
+        real (wp),    intent(out) :: d(n)
+        real (wp),    intent(in)  :: trigs(n)
+        integer (ip), intent(in)  :: inc1
+        integer (ip), intent(in)  :: inc2
+        integer (ip), intent(in)  :: inc3
+        integer (ip), intent(in)  :: inc4
+        integer (ip), intent(in)  :: lot
+        integer (ip), intent(in)  :: n
+        integer (ip), intent(in)  :: ifac
+        integer (ip), intent(in)  :: la
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        real (wp), parameter :: SIN_36 = 0.587785252292473129168705954639072768597652437643145991072_wp
+        real (wp), parameter :: COS_36 = 0.809016994374947424102293417182819058860154589902881431067_wp
+        real (wp), parameter :: SIN_72 = 0.951056516295153572116439333379382143405698634125750222447_wp
+        real (wp), parameter :: COS_72 = 0.309016994374947424102293417182819058860154589902881431067_wp
+        real (wp), parameter :: SIN_60 = 0.866025403784438646763723170752936183471402626905190314027_wp
+        integer (ip) :: i
+        integer (ip) :: j
+        integer (ip) :: k
+        integer (ip) :: l
+        integer (ip) :: m
+        integer (ip) :: iink
+        integer (ip) :: jink
+        integer (ip) :: jump
+        integer (ip) :: ibase
+        integer (ip) :: jbase
+        integer (ip) :: igo
+        integer (ip) :: ijk
+        integer (ip) :: la1
+        integer (ip) :: ia
+        integer (ip) :: ja
+        integer (ip) :: ib
+        integer (ip) :: jb
+        integer (ip) :: kb
+        integer (ip) :: ic
+        integer (ip) :: jc
+        integer (ip) :: kc
+        integer (ip) :: id
+        integer (ip) :: jd
+        integer (ip) :: kd
+        integer (ip) :: ie
+        integer (ip) :: je
+        integer (ip) :: ke
+        real (wp) :: c1
+        real (wp) :: s1
+        real (wp) :: c2
+        real (wp) :: s2
+        real (wp) :: c3
+        real (wp) :: s3
+        real (wp) :: c4
+        real (wp) :: s4
+        !--------------------------------------------------------------------------------
+
+        m=n/ifac
+        iink=m*inc1
+        jink=la*inc2
+        jump=(ifac-1)*jink
+        ibase=0
+        jbase=0
+        igo=ifac-1
+        if (igo>4) return
+
+        select case (igo)
+
+            !   coding for factor 2
+
+            case (1)
+                ia=1
+                ja=1
+                ib=ia+iink
+                jb=ja+jink
+                do l=1,la
+                    i=ibase
+                    j=jbase
+                    do ijk=1,lot
+                        c(ja+j)=a(ia+i)+a(ib+i)
+                        d(ja+j)=b(ia+i)+b(ib+i)
+                        c(jb+j)=a(ia+i)-a(ib+i)
+                        d(jb+j)=b(ia+i)-b(ib+i)
+                        i=i+inc3
+                        j=j+inc4
+
+                    end do
+                    ibase=ibase+inc1
+                    jbase=jbase+inc2
+
+                end do
+                if (la == m) return
+                la1=la+1
+                jbase=jbase+jump
+                do k=la1,m,la
+                    kb=k+k-2
+                    c1=trigs(kb+1)
+                    s1=trigs(kb+2)
+                    do l=1,la
+                        i=ibase
+                        j=jbase
+                        do ijk=1,lot
+                            c(ja+j)=a(ia+i)+a(ib+i)
+                            d(ja+j)=b(ia+i)+b(ib+i)
+                            c(jb+j)=c1*(a(ia+i)-a(ib+i))-s1*(b(ia+i)-b(ib+i))
+                            d(jb+j)=s1*(a(ia+i)-a(ib+i))+c1*(b(ia+i)-b(ib+i))
+                            i=i+inc3
+                            j=j+inc4
+
+                        end do
+                        ibase=ibase+inc1
+                        jbase=jbase+inc2
+
+                    end do
+                    jbase=jbase+jump
+
+                end do
+            !     return
+
+            !   coding for factor 3
+
+            case (2)
+                ia=1
+                ja=1
+                ib=ia+iink
+                jb=ja+jink
+                ic=ib+iink
+                jc=jb+jink
+                do l=1,la
+                    i=ibase
+                    j=jbase
+                    do ijk=1,lot
+                        c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
+                        d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
+                        c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))
+                        c(jc+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))
+                        d(jb+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i)))
+                        d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i)))
+                        i=i+inc3
+                        j=j+inc4
+                    end do
+                    ibase=ibase+inc1
+                    jbase=jbase+inc2
+                end do
+                if (la == m) return
+                la1=la+1
+                jbase=jbase+jump
+                do k=la1,m,la
+                    kb=k+k-2
+                    kc=kb+kb
+                    c1=trigs(kb+1)
+                    s1=trigs(kb+2)
+                    c2=trigs(kc+1)
+                    s2=trigs(kc+2)
+                    do l=1,la
+                        i=ibase
+                        j=jbase
+                        do ijk=1,lot
+                            c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
+                            d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
+                            c(jb+j)=                                                           &
+                                c1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
+                                -s1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
+                            d(jb+j)=                                                           &
+                                s1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
+                                +c1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
+                            c(jc+j)=                                                           &
+                                c2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
+                                -s2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
+                            d(jc+j)=                                                           &
+                                s2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
+                                +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
+                            i=i+inc3
+                            j=j+inc4
+                        end do
+                        ibase=ibase+inc1
+                        jbase=jbase+inc2
+                    end do
+                    jbase=jbase+jump
+                end do
+            !     return
+
+            !   coding for factor 4
+
+            case (3)
+                ia=1
+                ja=1
+                ib=ia+iink
+                jb=ja+jink
+                ic=ib+iink
+                jc=jb+jink
+                id=ic+iink
+                jd=jc+jink
+                do l=1,la
+                    i=ibase
+                    j=jbase
+                    do ijk=1,lot
+                        c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
+                        c(jc+j)=(a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))
+                        d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
+                        d(jc+j)=(b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i))
+                        c(jb+j)=(a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))
+                        c(jd+j)=(a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))
+                        d(jb+j)=(b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i))
+                        d(jd+j)=(b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i))
+                        i=i+inc3
+                        j=j+inc4
+                    end do
+                    ibase=ibase+inc1
+                    jbase=jbase+inc2
+                end do
+                if (la == m) return
+                la1=la+1
+                jbase=jbase+jump
+                do k=la1,m,la
+                    kb=k+k-2
+                    kc=kb+kb
+                    kd=kc+kb
+                    c1=trigs(kb+1)
+                    s1=trigs(kb+2)
+                    c2=trigs(kc+1)
+                    s2=trigs(kc+2)
+                    c3=trigs(kd+1)
+                    s3=trigs(kd+2)
+                    do l=1,la
+                        i=ibase
+                        j=jbase
+                        do ijk=1,lot
+                            c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
+                            d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
+                            c(jc+j)=                                     &
+                                c2*((a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))) &
+                                -s2*((b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i)))
+                            d(jc+j)=                                     &
+                                s2*((a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))) &
+                                +c2*((b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i)))
+                            c(jb+j)=                                     &
+                                c1*((a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))) &
+                                -s1*((b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i)))
+                            d(jb+j)=                                     &
+                                s1*((a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))) &
+                                +c1*((b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i)))
+                            c(jd+j)=                                     &
+                                c3*((a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))) &
+                                -s3*((b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i)))
+                            d(jd+j)=                                     &
+                                s3*((a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))) &
+                                +c3*((b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i)))
+                            i=i+inc3
+                            j=j+inc4
+                        end do
+                        ibase=ibase+inc1
+                        jbase=jbase+inc2
+                    end do
+                    jbase=jbase+jump
+                end do
+            !     return
+
+            !   coding for factor 5
+
+            case (4)
+                ia=1
+                ja=1
+                ib=ia+iink
+                jb=ja+jink
+                ic=ib+iink
+                jc=jb+jink
+                id=ic+iink
+                jd=jc+jink
+                ie=id+iink
+                je=jd+jink
+                do l=1,la
+                    i=ibase
+                    j=jbase
+                    do ijk=1,lot
+                        c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
+                        d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
+                        c(jb+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
+                        c(je+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
+                        d(jb+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
+                        d(je+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
+                        c(jc+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
+                        c(jd+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
+                        d(jc+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
+                        d(jd+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
+                        i=i+inc3
+                        j=j+inc4
+                    end do
+                    ibase=ibase+inc1
+                    jbase=jbase+inc2
+                end do
+                if (la == m) return
+                la1=la+1
+                jbase=jbase+jump
+                do k=la1,m,la
+                    kb=k+k-2
+                    kc=kb+kb
+                    kd=kc+kb
+                    ke=kd+kb
+                    c1=trigs(kb+1)
+                    s1=trigs(kb+2)
+                    c2=trigs(kc+1)
+                    s2=trigs(kc+2)
+                    c3=trigs(kd+1)
+                    s3=trigs(kd+2)
+                    c4=trigs(ke+1)
+                    s4=trigs(ke+2)
+                    do l=1,la
+                        i=ibase
+                        j=jbase
+                        do ijk=1,lot
+                            c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
+                            d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
+                            c(jb+j)=                                                          &
+                                c1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                                -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                                -s1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                                +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
+                            d(jb+j)=                                                          &
+                                s1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                                -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                                +c1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                                +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
+                            c(je+j)=                                                          &
+                                c4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                                +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                                -s4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                                -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
+                            d(je+j)=                                                          &
+                                s4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                                +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                                +c4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                                -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
+                            c(jc+j)=                                                          &
+                                c2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                                -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                                -s2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                                +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
+                            d(jc+j)=                                                          &
+                                s2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                                -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                                +c2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                                +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
+                            c(jd+j)=                                                          &
+                                c3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                                +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                                -s3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                                -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
+                            d(jd+j)=                                                          &
+                                s3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                                +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                                +c3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                                -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
+                            i=i+inc3
+                            j=j+inc4
+                        end do
+                        ibase=ibase+inc1
+                        jbase=jbase+inc2
+                    end do
+                    jbase=jbase+jump
+                end do
+
+        end select
+
+    end subroutine vpassm
+      !
+      !*****************************************************************************************
+      !
     subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
         integer (ip), intent(in)    :: inc
         integer (ip), intent(in)    ::jump
@@ -218,6 +620,92 @@ contains
     !
     !*****************************************************************************************
     !
+    subroutine initialize_fft99 (trigs, ifax, n)
+        integer (ip), intent(in)  :: n
+        integer (ip), intent(out) :: ifax(:)
+        real (wp),    intent(out) :: trigs(:)
+
+        !     dimension ifax(13),trigs(1)
+        !
+        ! mode 3 is used for real/half-complex transforms.  it is possible
+        ! to do complex/complex transforms with other values of mode, but
+        ! documentation of the details were not available when this routine
+        ! was written.
+        !
+        integer (ip) :: mode = 3
+        integer (ip) :: i
+
+        call fax (ifax, n, mode)
+        i = ifax(1)
+        if (ifax(i+1) > 5 .or. n <= 4) ifax(1) = -99
+        if (ifax(1) <= 0 ) then
+            error stop ' initialize_fft99 -- invalid n'
+        end if
+        call fftrig (trigs, n, mode)
+
+    end subroutine initialize_fft99
+    !
+    !*****************************************************************************************
+    !
+    subroutine fftrig (trigs,n,mode)
+        real (wp),    intent(out) :: trigs(:)
+        integer (ip), intent(in)  :: n
+        integer (ip), intent(in)  :: mode
+
+        real (wp) :: del
+        real (wp) :: angle
+        real (wp), parameter :: PI = acos( -1.0_wp )
+        integer (ip) :: imode
+        integer (ip) :: nn
+        integer (ip) :: nh
+        integer (ip) :: i
+        integer (ip) :: l
+        integer (ip) :: la
+
+        imode=iabs(mode)
+        nn=n
+        if (imode>1.and.imode<6) nn=n/2
+        del=(2.0_wp * PI)/real(nn, kind=wp)
+        l=nn+nn
+        do i=1,l,2
+            angle=0.5_wp*real(i-1, kind=wp)*del
+            trigs(i)=cos(angle)
+            trigs(i+1)=sin(angle)
+        end do
+        if (imode == 1) return
+        if (imode == 8) return
+
+        del=0.5_wp*del
+        nh=(nn+1)/2
+        l=nh+nh
+        la=nn+nn
+        do i=1,l,2
+            angle=0.5_wp*real(i-1,kind=wp)*del
+            trigs(la+i)=cos(angle)
+            trigs(la+i+1)=sin(angle)
+        end do
+        if (imode<=3) return
+
+        del=0.5_wp*del
+        la=la+nn
+        if (mode/=5) then
+            do i=2,nn
+                angle=real(i-1,kind=wp)*del
+                trigs(la+i)=2.0_wp*sin(angle)
+            end do
+            return
+        end if
+
+        del=0.5_wp*del
+        do i=2,n
+            angle=real(i-1,kind=wp)*del
+            trigs(la+i)=sin(angle)
+        end do
+
+    end subroutine fftrig
+    !
+    !*****************************************************************************************
+    !
     subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
         !
         !--------------------------------------------------------------------------------
@@ -387,36 +875,9 @@ contains
 14011 continue
 
   end subroutine perform_fft991
-  !
-  !*****************************************************************************************
-  !
-  subroutine initialize_fft99 (trigs, ifax, n)
-      integer (ip), intent(in)  :: n
-      integer (ip), intent(out) :: ifax(:)
-      real (wp),    intent(out) :: trigs(:)
-
-      !     dimension ifax(13),trigs(1)
-      !
-      ! mode 3 is used for real/half-complex transforms.  it is possible
-      ! to do complex/complex transforms with other values of mode, but
-      ! documentation of the details were not available when this routine
-      ! was written.
-      !
-      integer (ip) :: mode = 3
-      integer (ip) :: i
-
-      call fax (ifax, n, mode)
-      i = ifax(1)
-      if (ifax(i+1) > 5 .or. n <= 4) ifax(1) = -99
-      if (ifax(1) <= 0 ) then
-          error stop ' initialize_fft99 -- invalid n'
-      end if
-      call fftrig (trigs, n, mode)
-
-  end subroutine initialize_fft99
-  !
-  !*****************************************************************************************
-  !
+    !
+    !*****************************************************************************************
+    !
   subroutine fax (ifax,n,mode)
       integer (ip), intent(out) :: ifax(:)
       integer (ip), intent(in)  :: n
@@ -487,465 +948,10 @@ contains
               ifax(i+1)=item
 90        continue
           end do
-1001  continue
       end do
 11011 continue
 
   end subroutine fax
-      !
-      !*****************************************************************************************
-      !
-  subroutine fftrig (trigs,n,mode)
-      real (wp),    intent(out) :: trigs(:)
-      integer (ip), intent(in)  :: n
-      integer (ip), intent(in)  :: mode
-
-      real (wp) :: del
-      real (wp) :: angle
-      real (wp), parameter :: PI = acos( -1.0_wp )
-      integer (ip) :: imode
-      integer (ip) :: nn
-      integer (ip) :: nh
-      integer (ip) :: i
-      integer (ip) :: l
-      integer (ip) :: la
-
-      imode=iabs(mode)
-      nn=n
-      if (imode>1.and.imode<6) nn=n/2
-      del=(2.0_wp * PI)/real(nn, kind=wp)
-      l=nn+nn
-      do i=1,l,2
-          angle=0.5_wp*real(i-1, kind=wp)*del
-          trigs(i)=cos(angle)
-          trigs(i+1)=sin(angle)
-      end do
-      if (imode == 1) return
-      if (imode == 8) return
-
-      del=0.5_wp*del
-      nh=(nn+1)/2
-      l=nh+nh
-      la=nn+nn
-      do i=1,l,2
-          angle=0.5_wp*real(i-1,kind=wp)*del
-          trigs(la+i)=cos(angle)
-          trigs(la+i+1)=sin(angle)
-      end do
-      if (imode<=3) return
-
-      del=0.5_wp*del
-      la=la+nn
-      if (mode/=5) then
-          do i=2,nn
-              angle=real(i-1,kind=wp)*del
-              trigs(la+i)=2.0_wp*sin(angle)
-          end do
-          return
-      end if
-
-      del=0.5_wp*del
-      do i=2,n
-          angle=real(i-1,kind=wp)*del
-          trigs(la+i)=sin(angle)
-      end do
-
-  end subroutine fftrig
-    !
-    !*****************************************************************************************
-    !
-  subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
-      integer (ip), intent(in)  :: inc1
-      integer (ip), intent(in)  :: inc2
-      integer (ip), intent(in)  :: inc3
-      integer (ip), intent(in)  :: inc4
-      integer (ip), intent(in)  :: lot
-      integer (ip), intent(in)  :: n
-      integer (ip), intent(in)  :: ifac
-      integer (ip), intent(in)  :: la
-      real (wp),    intent(in)  :: a(n)
-      real (wp),    intent(in)  :: b(n)
-      real (wp),    intent(in)  :: trigs(n)
-      real (wp),    intent(out) :: c(n)
-      real (wp),    intent(out) :: d(n)
-      !
-      !     subroutine "vpassm" - multiple version of "vpassa"
-      !     performs one pass through data
-      !     as part of multiple complex fft routine
-      !     a is first real input vector
-      !     b is first imaginary input vector
-      !     c is first real output vector
-      !     d is first imaginary output vector
-      !     trigs is precalculated table of sines " cosines
-      !     inc1 is addressing increment for a and b
-      !     inc2 is addressing increment for c and d
-      !     inc3 is addressing increment between a"s & b"s
-      !     inc4 is addressing increment between c"s & d"s
-      !     lot is the number of vectors
-      !     n is length of vectors
-      !     ifac is current factor of n
-      !     la is product of previous factors
-      !
-
-      real (wp), parameter :: SIN_36 = 0.587785252292473129168705954639072768597652437643145991072_wp
-      real (wp), parameter :: COS_36 = 0.809016994374947424102293417182819058860154589902881431067_wp
-      real (wp), parameter :: SIN_72 = 0.951056516295153572116439333379382143405698634125750222447_wp
-      real (wp), parameter :: COS_72 = 0.309016994374947424102293417182819058860154589902881431067_wp
-      real (wp), parameter :: SIN_60 = 0.866025403784438646763723170752936183471402626905190314027_wp
-
-      integer (ip) :: i
-      integer (ip) :: j
-      integer (ip) :: k
-      integer (ip) :: l
-      integer (ip) :: m
-      integer (ip) :: iink
-      integer (ip) :: jink
-      integer (ip) :: jump
-      integer (ip) :: ibase
-      integer (ip) :: jbase
-      integer (ip) :: igo
-      integer (ip) :: ijk
-      integer (ip) :: la1
-      integer (ip) :: ia
-      integer (ip) :: ja
-      integer (ip) :: ib
-      integer (ip) :: jb
-      integer (ip) :: kb
-      integer (ip) :: ic
-      integer (ip) :: jc
-      integer (ip) :: kc
-      integer (ip) :: id
-      integer (ip) :: jd
-      integer (ip) :: kd
-      integer (ip) :: ie
-      integer (ip) :: je
-      integer (ip) :: ke
-      real (wp) :: c1
-      real (wp) :: s1
-      real (wp) :: c2
-      real (wp) :: s2
-      real (wp) :: c3
-      real (wp) :: s3
-      real (wp) :: c4
-      real (wp) :: s4
-
-      m=n/ifac
-      iink=m*inc1
-      jink=la*inc2
-      jump=(ifac-1)*jink
-      ibase=0
-      jbase=0
-      igo=ifac-1
-      if (igo>4) return
-      !del  goto (10,50,90,130),igo
-
-      select case (igo)
-
-          !   coding for factor 2
-
-          case (1)
-              ia=1
-              ja=1
-              ib=ia+iink
-              jb=ja+jink
-              do l=1,la
-                  i=ibase
-                  j=jbase
-                  do ijk=1,lot
-                      c(ja+j)=a(ia+i)+a(ib+i)
-                      d(ja+j)=b(ia+i)+b(ib+i)
-                      c(jb+j)=a(ia+i)-a(ib+i)
-                      d(jb+j)=b(ia+i)-b(ib+i)
-                      i=i+inc3
-                      j=j+inc4
-
-                  end do
-                  ibase=ibase+inc1
-                  jbase=jbase+inc2
-
-              end do
-              if (la == m) return
-              la1=la+1
-              jbase=jbase+jump
-              do k=la1,m,la
-                  kb=k+k-2
-                  c1=trigs(kb+1)
-                  s1=trigs(kb+2)
-                  do l=1,la
-                      i=ibase
-                      j=jbase
-                      do ijk=1,lot
-                          c(ja+j)=a(ia+i)+a(ib+i)
-                          d(ja+j)=b(ia+i)+b(ib+i)
-                          c(jb+j)=c1*(a(ia+i)-a(ib+i))-s1*(b(ia+i)-b(ib+i))
-                          d(jb+j)=s1*(a(ia+i)-a(ib+i))+c1*(b(ia+i)-b(ib+i))
-                          i=i+inc3
-                          j=j+inc4
-
-                      end do
-                      ibase=ibase+inc1
-                      jbase=jbase+inc2
-
-                  end do
-                  jbase=jbase+jump
-
-              end do
-          !     return
-
-          !   coding for factor 3
-
-          case (2)
-              ia=1
-              ja=1
-              ib=ia+iink
-              jb=ja+jink
-              ic=ib+iink
-              jc=jb+jink
-              do l=1,la
-                  i=ibase
-                  j=jbase
-                  do ijk=1,lot
-                      c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
-                      d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
-                      c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))
-                      c(jc+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))
-                      d(jb+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i)))
-                      d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i)))
-                      i=i+inc3
-                      j=j+inc4
-                  end do
-                  ibase=ibase+inc1
-                  jbase=jbase+inc2
-              end do
-              if (la == m) return
-              la1=la+1
-              jbase=jbase+jump
-              do k=la1,m,la
-                  kb=k+k-2
-                  kc=kb+kb
-                  c1=trigs(kb+1)
-                  s1=trigs(kb+2)
-                  c2=trigs(kc+1)
-                  s2=trigs(kc+2)
-                  do l=1,la
-                      i=ibase
-                      j=jbase
-                      do ijk=1,lot
-                          c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
-                          d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
-                          c(jb+j)=                                                           &
-                              c1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
-                              -s1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
-                          d(jb+j)=                                                           &
-                              s1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
-                              +c1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
-                          c(jc+j)=                                                           &
-                              c2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
-                              -s2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
-                          d(jc+j)=                                                           &
-                              s2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
-                              +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
-                          i=i+inc3
-                          j=j+inc4
-                      end do
-                      ibase=ibase+inc1
-                      jbase=jbase+inc2
-                  end do
-                  jbase=jbase+jump
-              end do
-          !     return
-
-          !   coding for factor 4
-
-          case (3)
-              ia=1
-              ja=1
-              ib=ia+iink
-              jb=ja+jink
-              ic=ib+iink
-              jc=jb+jink
-              id=ic+iink
-              jd=jc+jink
-              do l=1,la
-                  i=ibase
-                  j=jbase
-                  do ijk=1,lot
-                      c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
-                      c(jc+j)=(a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))
-                      d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
-                      d(jc+j)=(b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i))
-                      c(jb+j)=(a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))
-                      c(jd+j)=(a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))
-                      d(jb+j)=(b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i))
-                      d(jd+j)=(b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i))
-                      i=i+inc3
-                      j=j+inc4
-                  end do
-                  ibase=ibase+inc1
-                  jbase=jbase+inc2
-              end do
-              if (la == m) return
-              la1=la+1
-              jbase=jbase+jump
-              do k=la1,m,la
-                  kb=k+k-2
-                  kc=kb+kb
-                  kd=kc+kb
-                  c1=trigs(kb+1)
-                  s1=trigs(kb+2)
-                  c2=trigs(kc+1)
-                  s2=trigs(kc+2)
-                  c3=trigs(kd+1)
-                  s3=trigs(kd+2)
-                  do l=1,la
-                      i=ibase
-                      j=jbase
-                      do ijk=1,lot
-                          c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
-                          d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
-                          c(jc+j)=                                     &
-                              c2*((a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))) &
-                              -s2*((b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i)))
-                          d(jc+j)=                                     &
-                              s2*((a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))) &
-                              +c2*((b(ia+i)+b(ic+i))-(b(ib+i)+b(id+i)))
-                          c(jb+j)=                                     &
-                              c1*((a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))) &
-                              -s1*((b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i)))
-                          d(jb+j)=                                     &
-                              s1*((a(ia+i)-a(ic+i))-(b(ib+i)-b(id+i))) &
-                              +c1*((b(ia+i)-b(ic+i))+(a(ib+i)-a(id+i)))
-                          c(jd+j)=                                     &
-                              c3*((a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))) &
-                              -s3*((b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i)))
-                          d(jd+j)=                                     &
-                              s3*((a(ia+i)-a(ic+i))+(b(ib+i)-b(id+i))) &
-                              +c3*((b(ia+i)-b(ic+i))-(a(ib+i)-a(id+i)))
-                          i=i+inc3
-                          j=j+inc4
-                      end do
-                      ibase=ibase+inc1
-                      jbase=jbase+inc2
-                  end do
-                  jbase=jbase+jump
-              end do
-          !     return
-
-          !   coding for factor 5
-
-          case (4)
-              ia=1
-              ja=1
-              ib=ia+iink
-              jb=ja+jink
-              ic=ib+iink
-              jc=jb+jink
-              id=ic+iink
-              jd=jc+jink
-              ie=id+iink
-              je=jd+jink
-              do l=1,la
-                  i=ibase
-                  j=jbase
-                  do ijk=1,lot
-                      c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
-                      d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
-                      c(jb+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                          -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
-                      c(je+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                          +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
-                      d(jb+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                          +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
-                      d(je+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                          -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
-                      c(jc+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                          -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
-                      c(jd+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                          +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
-                      d(jc+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                          +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
-                      d(jd+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                          -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
-                      i=i+inc3
-                      j=j+inc4
-                  end do
-                  ibase=ibase+inc1
-                  jbase=jbase+inc2
-              end do
-              if (la == m) return
-              la1=la+1
-              jbase=jbase+jump
-              do k=la1,m,la
-                  kb=k+k-2
-                  kc=kb+kb
-                  kd=kc+kb
-                  ke=kd+kb
-                  c1=trigs(kb+1)
-                  s1=trigs(kb+2)
-                  c2=trigs(kc+1)
-                  s2=trigs(kc+2)
-                  c3=trigs(kd+1)
-                  s3=trigs(kd+2)
-                  c4=trigs(ke+1)
-                  s4=trigs(ke+2)
-                  do l=1,la
-                      i=ibase
-                      j=jbase
-                      do ijk=1,lot
-                          c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
-                          d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
-                          c(jb+j)=                                                          &
-                              c1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                              -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
-                              -s1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                              +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
-                          d(jb+j)=                                                          &
-                              s1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                              -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
-                              +c1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                              +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
-                          c(je+j)=                                                          &
-                              c4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                              +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
-                              -s4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                              -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
-                          d(je+j)=                                                          &
-                              s4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
-                              +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
-                              +c4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
-                              -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
-                          c(jc+j)=                                                          &
-                              c2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                              -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
-                              -s2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                              +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
-                          d(jc+j)=                                                          &
-                              s2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                              -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
-                              +c2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                              +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
-                          c(jd+j)=                                                          &
-                              c3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                              +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
-                              -s3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                              -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
-                          d(jd+j)=                                                          &
-                              s3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
-                              +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
-                              +c3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
-                              -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
-                          i=i+inc3
-                          j=j+inc4
-                      end do
-                      ibase=ibase+inc1
-                      jbase=jbase+inc2
-                  end do
-                  jbase=jbase+jump
-              end do
-
-      end select
-
-  end subroutine vpassm
       !
       !*****************************************************************************************
       !
