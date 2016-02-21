@@ -73,64 +73,60 @@ program test
     ! Explicit typing only
     implicit none
 
-    integer (ip), parameter :: nlon=128
-    integer (ip), parameter :: nlat=nlon/2
-    integer (ip), parameter :: ntrunc=42
-    integer (ip), parameter :: nmdim = (ntrunc+1)*(ntrunc+2)/2
-    complex (wp), dimension(nmdim) :: vrtnm
-    complex (wp), dimension(nmdim) ::divnm
-    complex (wp), dimension(nmdim) ::pnm
-    complex (wp), dimension(nmdim) ::scrnm
-    complex (wp), dimension(nmdim,3) :: dvrtdtnm
-    complex (wp), dimension(nmdim,3) ::ddivdtnm
-    complex (wp), dimension(nmdim,3) ::dpdtnm
-    complex (wp), dimension(ntrunc+1,nlat) :: scrm1
-    complex (wp), dimension(ntrunc+1,nlat) ::scrm2
-    real (wp), dimension(nlon,nlat) :: uxact
-    real (wp), dimension(nlon,nlat) ::vxact
-    real (wp), dimension(nlon,nlat) ::pxact
-    real (wp), dimension(nlon,nlat) ::u
-    real (wp), dimension(nlon,nlat) ::v
-    real (wp), dimension(nlon,nlat) ::p
-    real (wp), dimension(nlon,nlat) ::f
-    real (wp), dimension(nlon,nlat) :: &
-        coslat
-    real (wp), dimension(nlon,nlat) ::ug
-    real (wp), dimension(nlon,nlat) ::vg
-    real (wp), dimension(nlon,nlat) ::pg
-    real (wp), dimension(nlon,nlat) ::vrtg
-    real (wp), dimension(nlon,nlat) ::divg
-    real (wp), dimension(nlon,nlat) ::scrg1
-    real (wp), dimension(nlon,nlat) ::scrg2
-    integer (ip)::  MAXIMUM_NUMBER_OF_TIME_ITERATIONS
-    integer (ip)::mprint
-    integer (ip)::nl
-    integer (ip)::nlm1
-    integer (ip)::nlm2
-    integer (ip)::i
-    integer (ip)::j
-    integer (ip)::cycle_number
-    integer (ip)::&
-        nsav1
-    integer (ip)::nsav2
-    integer (ip)::n_old
-    integer (ip)::n_now
-    integer (ip)::n_new
+    integer (ip), parameter :: NLON=128
+    integer (ip), parameter :: NLAT=NLON/2
+    integer (ip), parameter :: NTRUNC=42
+    integer (ip), parameter :: NMDIM = (NTRUNC+1)*(NTRUNC+2)/2
+    integer (ip)            ::  MAXIMUM_NUMBER_OF_TIME_ITERATIONS
+    integer (ip)            :: MPRINT
+    integer (ip)            :: nl
+    integer (ip)            :: nlm1
+    integer (ip)            :: nlm2
+    integer (ip)            :: i, j !! Counters
+    integer (ip)            :: cycle_number
+    integer (ip)            :: nsav1
+    integer (ip)            :: nsav2
+    integer (ip)            :: n_old
+    integer (ip)            :: n_now
+    integer (ip)            :: n_new
+    real (wp), dimension(NLON,NLAT) :: uxact
+    real (wp), dimension(NLON,NLAT) :: vxact
+    real (wp), dimension(NLON,NLAT) :: pxact
+    real (wp), dimension(NLON,NLAT) :: u
+    real (wp), dimension(NLON,NLAT) :: v
+    real (wp), dimension(NLON,NLAT) :: p
+    real (wp), dimension(NLON,NLAT) :: f
+    real (wp), dimension(NLON,NLAT) :: coslat
+    real (wp), dimension(NLON,NLAT) :: ug
+    real (wp), dimension(NLON,NLAT) :: vg
+    real (wp), dimension(NLON,NLAT) :: pg
+    real (wp), dimension(NLON,NLAT) :: vrtg
+    real (wp), dimension(NLON,NLAT) :: divg
+    real (wp), dimension(NLON,NLAT) :: scrg1
+    real (wp), dimension(NLON,NLAT) :: scrg2
+    complex (wp), dimension(NMDIM) :: vrtnm
+    complex (wp), dimension(NMDIM) ::divnm
+    complex (wp), dimension(NMDIM) ::pnm
+    complex (wp), dimension(NMDIM) ::scrnm
+    complex (wp), dimension(NMDIM,3) :: dvrtdtnm
+    complex (wp), dimension(NMDIM,3) ::ddivdtnm
+    complex (wp), dimension(NMDIM,3) ::dpdtnm
+    complex (wp), dimension(NTRUNC+1,NLAT) :: scrm1
+    complex (wp), dimension(NTRUNC+1,NLAT) ::scrm2
     real (wp)::lhat
     real (wp)::phlt(361)
     real (wp)::uhat
     real (wp), parameter :: RADIUS_OF_EARTH_IN_METERS = 6.37122e+6_wp
-    real (wp)::uzero
-    real (wp)::pzero
     real (wp), parameter :: PI = acos( -1.0_wp )
     real (wp), parameter :: HALF_PI = 0.5_wp * PI
-    real (wp)::dtr
+    real (wp), parameter :: RADIAN_UNIT = PI/180.0_wp
     real (wp), parameter :: ROTATION_RATE_OF_EARTH = 7.292e-5_wp
-    real (wp)::alphad
-    real (wp)::&
-        alpha
+    real (wp), parameter :: DT = 300.0_wp
+    real (wp), parameter :: TILT_ANGLE = 60.0_wp
+    real (wp)::uzero
+    real (wp)::pzero
+    real (wp)::alpha
     real (wp)::fzero
-    real (wp)::dt
     real (wp)::cfn
     real (wp)::LATITUDINAL_MESH
     real (wp)::sint
@@ -142,8 +138,7 @@ program test
     real (wp)::sin_t
     real (wp)::cthclh
     real (wp)::cthslh
-    real (wp)::&
-        cos_lh
+    real (wp)::cos_lh
     real (wp)::time
     real (wp)::that
     real (wp)::sin_l
@@ -152,7 +147,7 @@ program test
     real (wp)::epmax
     real (wp)::dvmax
     real (wp)::dpmax
-    real (wp)::htime
+    real (wp)::model_time_in_hours
     real (wp)::dvgm
     real (wp)::cos_l
     real (wp)::v2max
@@ -165,20 +160,17 @@ program test
     write( stdout, '(A)') ' '
     write( stdout, '(A)') 'Non-linear steady-state geostropic flow in a shallow water model'
     write( stdout, '(A)') ' '
-    write( stdout, '(A,I11)') 'Triangular trunction number  = ', ntrunc
-    write( stdout, '(A,I11)') 'Number of gaussian latitudes = ', nlat
+    write( stdout, '(A,I11)') 'Triangular trunction number  = ', NTRUNC
+    write( stdout, '(A,I11)') 'Number of gaussian latitudes = ', NLAT
     write( stdout, '(A)') ' '
 
-    dtr = PI/180.0_wp
+
     fzero = 2.0_wp * ROTATION_RATE_OF_EARTH
     uzero = 40.0_wp
     pzero = 2.94e+4_wp
-    alphad = 60.0_wp
-    alpha = dtr*alphad
-
-    dt = 300.0_wp
-    MAXIMUM_NUMBER_OF_TIME_ITERATIONS = nint(864.0e+2_wp * 5.0_wp/dt, kind=ip)
-    mprint = MAXIMUM_NUMBER_OF_TIME_ITERATIONS/10
+    alpha = RADIAN_UNIT * TILT_ANGLE
+    MAXIMUM_NUMBER_OF_TIME_ITERATIONS = nint( 864.0e+2_wp * 5.0_wp/DT, kind=ip)
+    MPRINT = MAXIMUM_NUMBER_OF_TIME_ITERATIONS/10
 
     !     compute the derivative of the unrotated geopotential
     !     p as a function of latitude
@@ -190,10 +182,11 @@ program test
     LATITUDINAL_MESH = PI/nlm1
     do i=1,nlm2
         associate( theta => real(i, kind=wp) * LATITUDINAL_MESH )
-            sint = sin(theta)
-            cost = cos(theta)
-            uhat = compute_initial_unrotated_longitudinal_velocity(uzero,HALF_PI-theta)
-            phlt(i) = cfn*cost*uhat*(uhat/sint+RADIUS_OF_EARTH_IN_METERS*fzero)
+            uhat = &
+                compute_initial_unrotated_longitudinal_velocity( uzero, HALF_PI - theta )
+
+            phlt(i) = &
+                cfn * cos(theta) * uhat * ( uhat/sin(theta) + RADIUS_OF_EARTH_IN_METERS * fzero )
         end associate
     end do
 
@@ -220,19 +213,20 @@ program test
     !
     cos_a = cos(alpha)
     sin_a = sin(alpha)
-    LONGITUDINAL_MESH = (2.0_wp * PI)/nlon
+    LONGITUDINAL_MESH = (2.0_wp * PI)/NLON
 
     !  initialize sphere derived data type.
 
-    call initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,RADIUS_OF_EARTH_IN_METERS)
+    call initialize_gaussian_spherical_harmonic( &
+        this, NLON, NLAT, NTRUNC, RADIUS_OF_EARTH_IN_METERS)
 
-    do j=1,nlon
+    do j=1,NLON
         associate( lambda => real(j - 1, kind=wp) * LONGITUDINAL_MESH )
             cos_l = cos(lambda)
             sin_l = sin(lambda)
         end associate
         associate( gaulats => this%gaulats )
-            do i = 1, nlat
+            do i = 1, NLAT
 
                 !     lambda is longitude, theta is colatitude, and pi/2-theta is
                 !     latitude on the rotated grid. lhat and that are longitude
@@ -265,10 +259,10 @@ program test
     pmax = 0.0_wp
     v2max = 0.0_wp
     p2max = 0.0_wp
-    do j=1,nlat
-        do i=1,nlon
-            v2max = v2max+uxact(i,j)**2+vxact(i,j)**2
-            p2max = p2max+pxact(i,j)**2
+    do j=1,NLAT
+        do i=1,NLON
+            v2max = v2max + uxact(i,j)**2 + vxact(i,j)**2
+            p2max = p2max + pxact(i,j)**2
             vmax = max(abs(uxact(i,j)),abs(vxact(i,j)),vmax)
             pmax = max(abs(pxact(i,j)),pmax)
         end do
@@ -297,7 +291,7 @@ program test
 
     do cycle_number = 0, MAXIMUM_NUMBER_OF_TIME_ITERATIONS
 
-        time = real(cycle_number, kind=wp)*dt
+        time = real(cycle_number, kind=wp)*DT
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
@@ -310,13 +304,19 @@ program test
 
         !==> compute error statistics.
 
-        if (mod(cycle_number,mprint) == 0) then
+        if (mod(cycle_number, MPRINT ) == 0) then
+
             call perform_spherical_harmonic_transform(this,divg,divnm,-1)
+
             u = ug/coslat
             v = vg/coslat
             p = pg
-            htime = time/3600.0_wp
-            write(stdout,390) cycle_number,htime,dt,nlat,nlon,ntrunc,ROTATION_RATE_OF_EARTH,pzero,uzero,alphad
+            model_time_in_hours = time/3600.0_wp
+
+            write( stdout, 390 ) &
+                cycle_number, model_time_in_hours, &
+                DT, NLAT, NLON, NTRUNC, &
+                ROTATION_RATE_OF_EARTH, pzero, uzero, TILT_ANGLE
 
 390         format(//' steady nonlinear rotated flow:',/    &
                 ' cycle number              ',i10,     &
@@ -336,8 +336,8 @@ program test
             evmax = 0.0_wp
             epmax = 0.0_wp
 
-            do j=1,nlat
-                do i=1,nlon
+            do j=1,NLAT
+                do i=1,NLON
                     dvgm = &
                         max(dvgm,abs(divg(i,j)))
                     dvmax = &
@@ -356,8 +356,8 @@ program test
             evmax = evmax/vmax
             epmax = epmax/pmax
 
-            write(stdout,391) evmax,epmax,dvmax,dpmax,dvgm
-391         format(&
+            write( stdout, 391 ) evmax,epmax,dvmax,dpmax,dvgm
+391         format( &
                 ' max error in velocity',1pe15.6,&
                 ' max error in geopot. ',1pe15.6,/&
                 ' l2 error in velocity ',1pe15.6,&
@@ -409,19 +409,19 @@ program test
         end select
 
         vrtnm = &
-            vrtnm + dt * (&
+            vrtnm + DT * (&
             (23.0_wp/12.0_wp) * dvrtdtnm(:,n_new) &
             - (16.0_wp/12.0_wp) * dvrtdtnm(:,n_now) &
             + (5.0_wp/12.0_wp) * dvrtdtnm(:,n_old) )
 
         divnm = &
-            divnm + dt *( &
+            divnm + DT *( &
             (23.0_wp/12.0_wp) * ddivdtnm(:,n_new) &
             - (16.0_wp/12.0_wp) * ddivdtnm(:,n_now) &
             + (5.0_wp/12.0_wp) * ddivdtnm(:,n_old) )
 
         pnm = &
-            pnm + dt * (&
+            pnm + DT * (&
             (23.0_wp/12.0_wp) * dpdtnm(:,n_new) &
             - (16.0_wp/12.0_wp) * dpdtnm(:,n_now) &
             + (5.0_wp/12.0_wp) * dpdtnm(:,n_old) )
@@ -443,24 +443,32 @@ program test
     call destroy_gaussian_spherical_harmonic(this)
 
 contains
-
-    pure function compute_initial_unrotated_longitudinal_velocity(amp,thetad) result (return_value)
+    !
+    !*****************************************************************************************
+    !
+    pure function compute_initial_unrotated_longitudinal_velocity( &
+        amp, thetad ) result (return_value)
         !
         !     computes the initial unrotated longitudinal velocity
         !     see section 3.3.
-        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         real (wp), intent (in) :: amp
         real (wp), intent (in) :: thetad
         real (wp)              :: return_value
-
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         real (wp), parameter :: ZERO = nearest( 1.0_wp, 1.0_wp) - nearest( 1.0_wp, -1.0_wp)
         real (wp), parameter :: PI = acos( -1.0_wp )
         real (wp)            :: x
+        !--------------------------------------------------------------------------------
 
         associate( &
-            thetab => -pi/6.0_wp, &
-            thetae => pi/2.0_wp, &
-            xe => 3.0e-1_wp &
+            thetab => -PI/6.0_wp, &
+            thetae => PI/2.0_wp, &
+            xe     => 3.0e-1_wp &
             )
 
             x =xe*(thetad-thetab)/(thetae-thetab)
@@ -476,30 +484,51 @@ contains
         end associate
 
     end function compute_initial_unrotated_longitudinal_velocity
+    !
+    !*****************************************************************************************
+    !
+    pure function atanxy( x, y ) result (return_value)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        real (wp), intent (in) :: x
+        real (wp), intent (in) :: y
+        real (wp)              :: return_value
+        !--------------------------------------------------------------------------------
+        real (wp), parameter :: ZERO = nearest( 1.0_wp, 1.0_wp) - nearest( 1.0_wp, -1.0_wp)
+        !--------------------------------------------------------------------------------
 
-    real (wp) function atanxy(x,y)
-        real (wp):: x
-        real (wp)::y
-        atanxy = 0.
-        if(x==0. .and. y==0.) return
-        atanxy = atan2(y,x)
+        ! Initialize return value
+        return_value = 0.0_wp
+
+        if ( x == ZERO .and. y == ZERO ) return
+
+        return_value = atan2( y, x )
+
     end function atanxy
-
+    !
+    !*****************************************************************************************
+    !
     subroutine compute_sine_transform( x )
-        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         real (wp), intent (in out) :: x(:)
-
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip)           :: i,j !! Counters
         real (wp), allocatable ::  w(:)
+        !--------------------------------------------------------------------------------
 
         associate( n => size(x) )
 
             allocate( w(n) )
 
             associate( arg => acos(-1.0_wp)/(n+1) )
-                do j=1,n
+                do j = 1, n
                     w(j) = 0.0_wp
-                    do i=1,n
+                    do i = 1, n
                         associate( sin_arg => real(i*j,kind=wp)*arg )
                             w(j) = w(j)+x(i)*sin(sin_arg)
                         end associate
@@ -514,14 +543,21 @@ contains
         deallocate(w)
 
     end subroutine compute_sine_transform
-
+    !
+    !*****************************************************************************************
+    !
     pure function compute_cosine_transform(theta, cf) result (return_value)
-
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         real (wp), intent(in) :: theta
         real (wp), intent(in) :: cf(:)
         real (wp)             :: return_value
-
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip)          :: i !! Counter
+        !--------------------------------------------------------------------------------
 
         return_value = 0.0_wp
 
@@ -532,5 +568,7 @@ contains
         end associate
 
     end function compute_cosine_transform
-
+    !
+    !*****************************************************************************************
+    !
 end program test

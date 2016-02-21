@@ -15,7 +15,9 @@ module module_fast_fourier_transform
 
 
 contains
-
+    !
+    !*****************************************************************************************
+    !
     subroutine fft99 (a,work,trigs,ifax,inc,jump,n,lot,isign)
 
         ! purpose      performs multiple fast fourier transforms.  this package
@@ -397,9 +399,9 @@ contains
 140 continue
 
 end subroutine fft99
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    :: inc
     integer (ip), intent(in)    ::jump
@@ -494,9 +496,9 @@ subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
     end if
 
 end subroutine perform_preprocessing_step_for_fft99
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     integer (ip), intent(in)    :: inc
     integer (ip), intent(in)    ::jump
@@ -597,9 +599,9 @@ subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
     end if
 
 end subroutine perform_postprocessing_step_for_fft99
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !
     !--------------------------------------------------------------------------------
@@ -769,9 +771,9 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 140 continue
 
 end subroutine perform_fft991
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine initialize_fft99 (trigs, ifax, n)
     integer (ip), intent(in)  :: n
     integer (ip), intent(out) :: ifax(:)
@@ -873,9 +875,9 @@ subroutine fax (ifax,n,mode)
 110 continue
 
 end subroutine fax
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine fftrig (trigs,n,mode)
     real (wp),    intent(out) :: trigs(:)
     integer (ip), intent(in)  :: n
@@ -933,9 +935,9 @@ subroutine fftrig (trigs,n,mode)
     end do
 
 end subroutine fftrig
-
-!##########################################################################
-
+    !
+    !*****************************************************************************************
+    !
 subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     integer (ip), intent(in)  :: inc1
     integer (ip), intent(in)  :: inc2
@@ -969,11 +971,11 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     !     la is product of previous factors
     !
 
-    real (wp) :: sin36=0.587785252292473
-    real (wp) :: cos36=0.809016994374947
-    real (wp) :: sin72=0.951056516295154
-    real (wp) :: cos72=0.309016994374947424102293417182819058860154589902881431067
-    real (wp) :: sin60=0.866025403784438646763723170752936183471402626905190314027
+    real (wp), parameter :: SIN_36 = 0.587785252292473129168705954639072768597652437643145991072_wp
+    real (wp), parameter :: COS_36 = 0.809016994374947424102293417182819058860154589902881431067_wp
+    real (wp), parameter :: SIN_72 = 0.951056516295153572116439333379382143405698634125750222447_wp
+    real (wp), parameter :: COS_72 = 0.309016994374947424102293417182819058860154589902881431067_wp
+    real (wp), parameter :: SIN_60 = 0.866025403784438646763723170752936183471402626905190314027_wp
 
     integer (ip) :: i
     integer (ip) :: j
@@ -1084,10 +1086,10 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 do 55 ijk=1,lot
                     c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                     d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
-                    c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))
-                    c(jc+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))
-                    d(jb+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i)))
-                    d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i)))
+                    c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))
+                    c(jc+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))
+                    d(jb+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i)))
+                    d(jc+j)=(b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i)))
                     i=i+inc3
                     j=j+inc4
 55              continue
@@ -1111,17 +1113,17 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                         c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                         d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                         c(jb+j)=                                                           &
-                            c1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
-                            -s1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
+                            c1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
+                            -s1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
                         d(jb+j)=                                                           &
-                            s1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(sin60*(b(ib+i)-b(ic+i)))) &
-                            +c1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(sin60*(a(ib+i)-a(ic+i))))
+                            s1*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))) &
+                            +c1*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))+(SIN_60*(a(ib+i)-a(ic+i))))
                         c(jc+j)=                                                           &
-                            c2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
-                            -s2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
+                            c2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
+                            -s2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
                         d(jc+j)=                                                           &
-                            s2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(sin60*(b(ib+i)-b(ic+i)))) &
-                            +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(sin60*(a(ib+i)-a(ic+i))))
+                            s2*((a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))+(SIN_60*(b(ib+i)-b(ic+i)))) &
+                            +c2*((b(ia+i)-0.5_wp*(b(ib+i)+b(ic+i)))-(SIN_60*(a(ib+i)-a(ic+i))))
                         i=i+inc3
                         j=j+inc4
 65                  continue
@@ -1227,22 +1229,22 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                 do 135 ijk=1,lot
                     c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                     d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
-                    c(jb+j)=(a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                        -(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i)))
-                    c(je+j)=(a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                        +(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i)))
-                    d(jb+j)=(b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                        +(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i)))
-                    d(je+j)=(b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                        -(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i)))
-                    c(jc+j)=(a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                        -(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i)))
-                    c(jd+j)=(a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                        +(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i)))
-                    d(jc+j)=(b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                        +(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i)))
-                    d(jd+j)=(b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                        -(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i)))
+                    c(jb+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                        -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
+                    c(je+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                        +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i)))
+                    d(jb+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                        +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
+                    d(je+j)=(b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                        -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i)))
+                    c(jc+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                        -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
+                    c(jd+j)=(a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                        +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i)))
+                    d(jc+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                        +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
+                    d(jd+j)=(b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                        -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i)))
                     i=i+inc3
                     j=j+inc4
 135             continue
@@ -1272,45 +1274,45 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
                         c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                         d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
                         c(jb+j)=                                                          &
-                            c1*((a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                            -(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i))))         &
-                            -s1*((b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                            +(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i))))
+                            c1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                            -s1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
                         d(jb+j)=                                                          &
-                            s1*((a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                            -(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i))))         &
-                            +c1*((b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                            +(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i))))
+                            s1*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            -(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                            +c1*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            +(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
                         c(je+j)=                                                          &
-                            c4*((a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                            +(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i))))         &
-                            -s4*((b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                            -(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i))))
+                            c4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                            -s4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
                         d(je+j)=                                                          &
-                            s4*((a(ia+i)+cos72*(a(ib+i)+a(ie+i))-cos36*(a(ic+i)+a(id+i))) &
-                            +(sin72*(b(ib+i)-b(ie+i))+sin36*(b(ic+i)-b(id+i))))         &
-                            +c4*((b(ia+i)+cos72*(b(ib+i)+b(ie+i))-cos36*(b(ic+i)+b(id+i))) &
-                            -(sin72*(a(ib+i)-a(ie+i))+sin36*(a(ic+i)-a(id+i))))
+                            s4*((a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
+                            +(SIN_72*(b(ib+i)-b(ie+i))+SIN_36*(b(ic+i)-b(id+i))))         &
+                            +c4*((b(ia+i)+COS_72*(b(ib+i)+b(ie+i))-COS_36*(b(ic+i)+b(id+i))) &
+                            -(SIN_72*(a(ib+i)-a(ie+i))+SIN_36*(a(ic+i)-a(id+i))))
                         c(jc+j)=                                                          &
-                            c2*((a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                            -(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i))))         &
-                            -s2*((b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                            +(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i))))
+                            c2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                            -s2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
                         d(jc+j)=                                                          &
-                            s2*((a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                            -(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i))))         &
-                            +c2*((b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                            +(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i))))
+                            s2*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            -(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                            +c2*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            +(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
                         c(jd+j)=                                                          &
-                            c3*((a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                            +(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i))))         &
-                            -s3*((b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                            -(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i))))
+                            c3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                            -s3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
                         d(jd+j)=                                                          &
-                            s3*((a(ia+i)-cos36*(a(ib+i)+a(ie+i))+cos72*(a(ic+i)+a(id+i))) &
-                            +(sin36*(b(ib+i)-b(ie+i))-sin72*(b(ic+i)-b(id+i))))         &
-                            +c3*((b(ia+i)-cos36*(b(ib+i)+b(ie+i))+cos72*(b(ic+i)+b(id+i))) &
-                            -(sin36*(a(ib+i)-a(ie+i))-sin72*(a(ic+i)-a(id+i))))
+                            s3*((a(ia+i)-COS_36*(a(ib+i)+a(ie+i))+COS_72*(a(ic+i)+a(id+i))) &
+                            +(SIN_36*(b(ib+i)-b(ie+i))-SIN_72*(b(ic+i)-b(id+i))))         &
+                            +c3*((b(ia+i)-COS_36*(b(ib+i)+b(ie+i))+COS_72*(b(ic+i)+b(id+i))) &
+                            -(SIN_36*(a(ib+i)-a(ie+i))-SIN_72*(a(ic+i)-a(id+i))))
                         i=i+inc3
                         j=j+inc4
 145                 continue
@@ -1323,5 +1325,7 @@ subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
     end select
 
 end subroutine vpassm
-
+    !
+    !*****************************************************************************************
+    !
 end module module_fast_fourier_transform

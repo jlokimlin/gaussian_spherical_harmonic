@@ -883,10 +883,13 @@ contains
     !*****************************************************************************************
     !
     subroutine perform_isotropic_spectral_smoothing(this,datagrid,smooth)
-
-        ! isotropic spectral smoothing of datagrid.
-        ! input: smooth(this%ntrunc+1) - smoothing factor as a
-        ! function of degree (this%indxn).
+        !
+        ! Purpose:
+        !
+        ! Performs isotropic spectral smoothing of datagrid.
+        !
+        ! Input: smooth(ntrunc+1) - smoothing factor as a function of degree (indxn).
+        !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
