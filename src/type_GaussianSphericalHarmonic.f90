@@ -15,38 +15,44 @@ module type_GaussianSphericalHarmonic
 
     private
     public :: GaussianSphericalHarmonic
-    public :: initialize_gaussian_spherical_harmonic
-    public :: destroy_gaussian_spherical_harmonic
-    public :: perform_spherical_harmonic_transform
-    public :: perform_multiple_real_fft
-    public :: get_vector_gradient
-    public :: perform_isotropic_spectral_smoothing
-    public :: get_velocities_from_vorticity_and_divergence
-    public :: get_vorticity_and_divergence_from_velocities
-    public :: get_complex_spherical_harmonic_coefficients
-    public :: get_latitudes_and_gaussian_weights
-    public :: compute_associated_legendre_functions
 
     type, public :: GaussianSphericalHarmonic
         !---------------------------------------------------------------------------------
         ! Class variables
         !---------------------------------------------------------------------------------
-        integer (ip),              public  :: NLONS = 0
-        integer (ip),              public  :: NLATS = 0
-        integer (ip),              public  :: NTRUNC = 0
+        integer (ip),              public  :: NUMBER_OF_LONGITUDES = 0
+        integer (ip),              public  :: NUMBER_OF_LATITUDES = 0
+        integer (ip),              public  :: TRIANGULAR_TRUNCATION_LIMIT = 0
         integer (ip), allocatable, private :: indxm(:)
         integer (ip), allocatable, private :: indxn(:)
         integer (ip), allocatable, private :: ifax(:)
         real (wp),                 public  :: RADIUS_OF_SPHERE = 0.0_wp
-        real (wp), allocatable,    private :: trigs(:)
-        real (wp), allocatable,    public  :: gaulats(:)
-        real (wp), allocatable,    private :: weights(:)
-        real (wp), allocatable,    private :: gwrc(:)
-        real (wp), allocatable,    public  :: lap(:)
-        real (wp), allocatable,    private :: ilap(:)
-        real (wp), allocatable,    private :: pnm(:,:)
-        real (wp), allocatable,    private :: hnm(:,:)
+        real (wp), allocatable,    private :: trigonometric_functions(:)
+        real (wp), allocatable,    public  :: gaussian_latitudes(:)
+        real (wp), allocatable,    private :: gaussian_weights(:)
+        real (wp), allocatable,    private :: scaled_gaussian_weights(:)
+        real (wp), allocatable,    public  :: laplacian(:)
+        real (wp), allocatable,    private :: inverse_laplacian(:)
+        real (wp), allocatable,    private :: associated_legendre_functions(:,:)
+        real (wp), allocatable,    private :: legendre_derivative_quantity(:,:)
         logical,                   private :: initialized = .false.
+        !---------------------------------------------------------------------------------
+    contains
+        !---------------------------------------------------------------------------------
+        ! Class variables
+        !---------------------------------------------------------------------------------
+        procedure, public         :: create => initialize_gaussian_spherical_harmonic
+        procedure, public         :: destroy => destroy_gaussian_spherical_harmonic
+        procedure, public         :: perform_spherical_harmonic_transform
+        procedure, public         :: perform_multiple_real_fft
+        procedure, public         :: get_vector_gradient
+        procedure, public         :: perform_isotropic_spectral_smoothing
+        procedure, public         :: get_velocities_from_vorticity_and_divergence
+        procedure, public         :: get_vorticity_and_divergence_from_velocities
+        procedure, public         :: get_complex_spherical_harmonic_coefficients
+        procedure, nopass, public :: get_latitudes_and_gaussian_weights
+        procedure, nopass, public :: compute_associated_legendre_functions
+        !---------------------------------------------------------------------------------
     end type GaussianSphericalHarmonic
 
 contains
@@ -74,9 +80,9 @@ contains
         !--------------------------------------------------------------------------------
 
         ! Set contants
-        this%nlons = nlon
-        this%nlats = nlat
-        this%ntrunc = ntrunc
+        this%NUMBER_OF_LONGITUDES = nlon
+        this%NUMBER_OF_LATITUDES = nlat
+        this%TRIANGULAR_TRUNCATION_LIMIT = ntrunc
         this%RADIUS_OF_SPHERE = re
 
         associate( nmdim => (ntrunc+1)*(ntrunc+2)/2 )
@@ -85,29 +91,29 @@ contains
             ! Allocate arrays
             !--------------------------------------------------------------------------------
 
-            allocate(this%gwrc(nlat))
-            allocate(this%gaulats(nlat))
-            allocate(this%weights(nlat))
+            allocate(this%scaled_gaussian_weights(nlat))
+            allocate(this%gaussian_latitudes(nlat))
+            allocate(this%gaussian_weights(nlat))
             allocate(this%indxm(nmdim))
             allocate(this%indxn(nmdim))
-            allocate(this%lap(nmdim))
-            allocate(this%ilap(nmdim))
-            allocate(this%pnm(nmdim,nlat))
-            allocate(this%hnm(nmdim,nlat))
-            allocate(this%trigs((3*nlon/2)+1))
+            allocate(this%laplacian(nmdim))
+            allocate(this%inverse_laplacian(nmdim))
+            allocate(this%associated_legendre_functions(nmdim,nlat))
+            allocate(this%legendre_derivative_quantity(nmdim,nlat))
+            allocate(this%trigonometric_functions((3*nlon/2)+1))
             allocate(this%ifax(13))
 
             associate( &
-                gaulats => this%gaulats, &
-                weights => this%weights, &
-                gwrc => this%gwrc, &
+                gaulats => this%gaussian_latitudes, &
+                weights => this%gaussian_weights, &
+                gwrc => this%scaled_gaussian_weights, &
                 indxm => this%indxm, &
                 indxn => this%indxn, &
-                lap => this%lap, &
-                ilap => this%ilap, &
-                pnm => this%pnm, &
-                hnm => this%hnm, &
-                trigs => this%trigs, &
+                lap => this%laplacian, &
+                ilap => this%inverse_laplacian, &
+                pnm => this%associated_legendre_functions, &
+                hnm => this%legendre_derivative_quantity, &
+                trigs => this%trigonometric_functions, &
                 ifax => this%ifax &
                 )
 
@@ -149,17 +155,19 @@ contains
 
         if (.not. this%initialized) return
 
-        deallocate(this%gaulats)
-        deallocate(this%weights)
-        deallocate(this%gwrc)
-        deallocate(this%pnm)
-        deallocate(this%hnm)
+        deallocate(this%gaussian_latitudes)
+        deallocate(this%gaussian_weights)
+        deallocate(this%scaled_gaussian_weights)
+        deallocate(this%associated_legendre_functions)
+        deallocate(this%legendre_derivative_quantity)
         deallocate(this%indxm)
         deallocate(this%indxn)
-        deallocate(this%lap)
-        deallocate(this%ilap)
-        deallocate(this%trigs)
+        deallocate(this%laplacian)
+        deallocate(this%inverse_laplacian)
+        deallocate(this%trigonometric_functions)
         deallocate(this%ifax)
+
+        this%initialized = .false.
 
     end subroutine destroy_gaussian_spherical_harmonic
     !
@@ -398,7 +406,7 @@ contains
             error stop 'uninitialized sphere object in perform_multiple_real_fft!'
         end if
 
-        if ( this%ntrunc > this%nlons/2) then
+        if ( this%TRIANGULAR_TRUNCATION_LIMIT > this%NUMBER_OF_LONGITUDES/2) then
             error stop 'ntrunc must be less than or equal to nlons in perform_multiple_real_fft'
         end if
 
@@ -407,11 +415,11 @@ contains
         !--------------------------------------------------------------------------------
 
         associate( &
-            nlons  => this%nlons, &
-            nlats  => this%nlats, &
-            ntrunc => this%ntrunc, &
-            mwaves => this%ntrunc + 1, &
-            trigs  => this%trigs, &
+            nlons  => this%NUMBER_OF_LONGITUDES, &
+            nlats  => this%NUMBER_OF_LATITUDES, &
+            ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
+            trigs  => this%trigonometric_functions, &
             ifax   => this%ifax &
             )
 
@@ -521,11 +529,11 @@ contains
         end if
 
         associate( &
-            nlats   => this%nlats, &
-            ntrunc  => this%ntrunc, &
-            mwaves  => this%ntrunc + 1, &
-            pnm     => this%pnm, &
-            weights => this%weights &
+            nlats   => this%NUMBER_OF_LATITUDES, &
+            ntrunc  => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            mwaves  => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
+            pnm     => this%associated_legendre_functions, &
+            weights => this%gaussian_weights &
             )
 
             ! Allocate array
@@ -625,13 +633,13 @@ contains
         end if
 
         associate( &
-            nlats  => this%nlats, &
-            ntrunc => this%ntrunc, &
-            mwaves => this%ntrunc + 1, &
-            ilap   => this%ilap, &
+            nlats  => this%NUMBER_OF_LATITUDES, &
+            ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
+            ilap   => this%inverse_laplacian, &
             re     => this%RADIUS_OF_SPHERE, &
-            pnm    => this%pnm, &
-            hnm    => this%hnm &
+            pnm    => this%associated_legendre_functions, &
+            hnm    => this%legendre_derivative_quantity &
             )
 
             ! Allocate arrays
@@ -703,8 +711,8 @@ contains
 
         ! Allocate arrays
         associate( &
-            mwaves => this%ntrunc + 1, &
-            nlats  => this%nlats &
+            mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
+            nlats  => this%NUMBER_OF_LATITUDES &
             )
 
             allocate( um( mwaves, nlats ) )
@@ -775,12 +783,12 @@ contains
         associate( &
             sign1  => real(isign1, kind=wp), &
             sign2  => real(isign2, kind=wp), &
-            nlats  => this%nlats, &
-            ntrunc => this%ntrunc, &
-            mwaves => this%ntrunc+1, &
-            gwrc   => this%gwrc, &
-            pnm    => this%pnm, &
-            hnm    => this%hnm &
+            nlats  => this%NUMBER_OF_LATITUDES, &
+            ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            mwaves => this%TRIANGULAR_TRUNCATION_LIMIT+1, &
+            gwrc   => this%scaled_gaussian_weights, &
+            pnm    => this%associated_legendre_functions, &
+            hnm    => this%legendre_derivative_quantity &
             )
 
             anm = 0.0_wp
@@ -837,12 +845,12 @@ contains
         end if
 
         associate( &
-            nlats  => this%nlats, &
-            ntrunc => this%ntrunc, &
-            mwaves => this%ntrunc + 1, &
+            nlats  => this%NUMBER_OF_LATITUDES, &
+            ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
             re     => this%RADIUS_OF_SPHERE, &
-            pnm    => this%pnm, &
-            hnm    => this%hnm &
+            pnm    => this%associated_legendre_functions, &
+            hnm    => this%legendre_derivative_quantity &
             )
 
             ! Allocate arrays
@@ -909,8 +917,8 @@ contains
         end if
 
         associate( &
-            ntrunc => this%ntrunc, &
-            nmdim  => (this%ntrunc+1)*(this%ntrunc+2)/2, &
+            ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
+            nmdim  => (this%TRIANGULAR_TRUNCATION_LIMIT+1)*(this%TRIANGULAR_TRUNCATION_LIMIT+2)/2, &
             indxn  => this%indxn &
             )
 

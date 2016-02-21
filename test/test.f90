@@ -68,7 +68,8 @@ program test
         ip     => INT32, &
         stdout => OUTPUT_UNIT
 
-    use type_GaussianSphericalHarmonic
+    use type_GaussianSphericalHarmonic, only: &
+        GaussianSphericalHarmonic
 
     ! Explicit typing only
     implicit none
@@ -217,15 +218,15 @@ program test
 
     !  initialize sphere derived data type.
 
-    call initialize_gaussian_spherical_harmonic( &
-        this, NLON, NLAT, NTRUNC, RADIUS_OF_EARTH_IN_METERS)
+    call this%create( &
+        NLON, NLAT, NTRUNC, RADIUS_OF_EARTH_IN_METERS)
 
     do j=1,NLON
         associate( lambda => real(j - 1, kind=wp) * LONGITUDINAL_MESH )
             cos_l = cos(lambda)
             sin_l = sin(lambda)
         end associate
-        associate( gaulats => this%gaulats )
+        associate( gaulats => this%gaussian_latitudes )
             do i = 1, NLAT
 
                 !     lambda is longitude, theta is colatitude, and pi/2-theta is
@@ -279,8 +280,8 @@ program test
 
     !  compute spectral coeffs of initial vrt,div,p.
 
-    call get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
-    call perform_spherical_harmonic_transform(this,p,pnm,1)
+    call this%get_vorticity_and_divergence_from_velocities( vrtnm,divnm,ug,vg)
+    call this%perform_spherical_harmonic_transform( p,pnm,1)
 
 
     !==> time step loop.
@@ -295,18 +296,18 @@ program test
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
-        call perform_spherical_harmonic_transform(this,pg,pnm,-1)
-        call perform_spherical_harmonic_transform(this,vrtg,vrtnm,-1)
+        call this%perform_spherical_harmonic_transform( pg,pnm,-1)
+        call this%perform_spherical_harmonic_transform( vrtg,vrtnm,-1)
 
         !==> compute u and v on grid from spectral coeffs. of vort and div.
 
-        call get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
+        call this%get_velocities_from_vorticity_and_divergence( vrtnm,divnm,ug,vg)
 
         !==> compute error statistics.
 
         if (mod(cycle_number, MPRINT ) == 0) then
 
-            call perform_spherical_harmonic_transform(this,divg,divnm,-1)
+            call this%perform_spherical_harmonic_transform( divg,divnm,-1)
 
             u = ug/coslat
             v = vg/coslat
@@ -370,23 +371,23 @@ program test
         scrg1 = ug * ( vrtg + f )
         scrg2 = vg * ( vrtg + f )
 
-        call perform_multiple_real_fft(this, scrg1, scrm1, 1)
-        call perform_multiple_real_fft(this, scrg2, scrm2, 1)
+        call this%perform_multiple_real_fft( scrg1, scrm1, 1)
+        call this%perform_multiple_real_fft( scrg2, scrm2, 1)
 
-        call get_complex_spherical_harmonic_coefficients(this,scrm1,scrm2,dvrtdtnm(:,n_new),-1,1)
-        call get_complex_spherical_harmonic_coefficients(this,scrm2,scrm1,ddivdtnm(:,n_new),1,-1)
+        call this%get_complex_spherical_harmonic_coefficients(scrm1,scrm2,dvrtdtnm(:,n_new),-1,1)
+        call this%get_complex_spherical_harmonic_coefficients(scrm2,scrm1,ddivdtnm(:,n_new),1,-1)
 
         scrg1 = ug * ( pg + pzero )
         scrg2 = vg * ( pg + pzero )
 
-        call get_complex_spherical_harmonic_coefficients( &
-            this, scrm1, scrm2, dpdtnm(:,n_new), -1, 1)
+        call this%get_complex_spherical_harmonic_coefficients( &
+            scrm1, scrm2, dpdtnm(:,n_new), -1, 1)
 
         scrg1 = pg + 0.5_wp * ( ( ug**2 + vg**2 ) / coslat**2 )
 
-        call perform_spherical_harmonic_transform( this, scrg1, scrnm, 1)
+        call this%perform_spherical_harmonic_transform( scrg1, scrnm, 1)
 
-        associate( lap => this%lap )
+        associate( lap => this%laplacian )
             ddivdtnm(:,n_new) = ddivdtnm(:,n_new) - lap * scrnm
         end associate
 
@@ -440,7 +441,7 @@ program test
 
     !==> deallocate arrays in object.
 
-    call destroy_gaussian_spherical_harmonic(this)
+    call this%destroy()
 
 contains
     !

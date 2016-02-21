@@ -387,9 +387,9 @@ contains
 14011 continue
 
   end subroutine perform_fft991
-      !
-      !*****************************************************************************************
-      !
+  !
+  !*****************************************************************************************
+  !
   subroutine initialize_fft99 (trigs, ifax, n)
       integer (ip), intent(in)  :: n
       integer (ip), intent(out) :: ifax(:)
@@ -409,15 +409,14 @@ contains
       i = ifax(1)
       if (ifax(i+1) > 5 .or. n <= 4) ifax(1) = -99
       if (ifax(1) <= 0 ) then
-          write(6,*) ' initialize_fft99 -- invalid n'
-          stop
+          error stop ' initialize_fft99 -- invalid n'
       end if
       call fftrig (trigs, n, mode)
 
   end subroutine initialize_fft99
-
-  !##########################################################################
-
+  !
+  !*****************************************************************************************
+  !
   subroutine fax (ifax,n,mode)
       integer (ip), intent(out) :: ifax(:)
       integer (ip), intent(in)  :: n
@@ -563,10 +562,10 @@ contains
       integer (ip), intent(in)  :: ifac
       integer (ip), intent(in)  :: la
       real (wp),    intent(in)  :: a(n)
-      real (wp),    intent(in)  ::b(n)
-      real (wp),    intent(in)  ::trigs(n)
+      real (wp),    intent(in)  :: b(n)
+      real (wp),    intent(in)  :: trigs(n)
       real (wp),    intent(out) :: c(n)
-      real (wp),    intent(out) ::d(n)
+      real (wp),    intent(out) :: d(n)
       !
       !     subroutine "vpassm" - multiple version of "vpassa"
       !     performs one pass through data
