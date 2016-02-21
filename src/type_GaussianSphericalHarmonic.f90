@@ -24,7 +24,7 @@ module type_GaussianSphericalHarmonic
     public :: get_velocities_from_vorticity_and_divergence
     public :: get_vorticity_and_divergence_from_velocities
     public :: get_complex_spherical_harmonic_coefficients
-    public :: compute_latitudes_and_gaussian_weights
+    public :: get_latitudes_and_gaussian_weights
     public :: compute_associated_legendre_functions
 
     type, public :: GaussianSphericalHarmonic
@@ -111,7 +111,7 @@ contains
                 ifax => this%ifax &
                 )
 
-                call compute_latitudes_and_gaussian_weights( gaulats, weights )
+                call get_latitudes_and_gaussian_weights( gaulats, weights )
 
                 gwrc = weights/(re * (1.0_wp - (gaulats**2)))
                 indxm = [ ((m, n = m,ntrunc), m = 0, ntrunc) ]
@@ -136,10 +136,16 @@ contains
     !*****************************************************************************************
     !
     subroutine destroy_gaussian_spherical_harmonic(this)
-
-        ! deallocate allocatables in sphere object.
-
+        !
+        ! Purpose:
+        !
+        ! Deallocate allocatables in object.
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in out) :: this
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) return
 
@@ -159,7 +165,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine compute_latitudes_and_gaussian_weights(sinlats, wts)
+    subroutine get_latitudes_and_gaussian_weights(sinlats, wts)
         !
         ! Purpose:
         !
@@ -233,7 +239,7 @@ contains
             error stop 'abscissas failed to converge in COMPUTE_LATITUDES_AND_GAUSSIAN_WEIGHTS'
         end if
 
-    end subroutine compute_latitudes_and_gaussian_weights
+    end subroutine get_latitudes_and_gaussian_weights
     !
     !*****************************************************************************************
     !
@@ -306,10 +312,10 @@ contains
         !**** loop for the 'm' index.
 
         nmstrt = 0
-        do i = 1, ntrunc+1
+        do i = 1, ntrunc + 1
 
             m = (i - 1)
-            nmax = ntrunc+1-m
+            nmax = ntrunc + 1 - m
 
             !        when m=0 (i=1), standard legendre polynomials are
             !        generated.
@@ -401,12 +407,12 @@ contains
         !--------------------------------------------------------------------------------
 
         associate( &
-            nlons => this%nlons, &
-            nlats => this%nlats, &
+            nlons  => this%nlons, &
+            nlats  => this%nlats, &
             ntrunc => this%ntrunc, &
             mwaves => this%ntrunc + 1, &
-            trigs => this%trigs, &
-            ifax => this%ifax &
+            trigs  => this%trigs, &
+            ifax   => this%ifax &
             )
 
             !--------------------------------------------------------------------------------
@@ -670,23 +676,41 @@ contains
     !*****************************************************************************************
     !
     subroutine get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
-
-        ! compute vrtnm,divnm (spectral coeffs of vorticity and
+        !
+        ! Purpose:
+        !
+        ! Computes vrtnm, divnm (spectral coeffs of vorticity and
         ! divergence) from U,V (winds time cos(lat)).
-
-        class (GaussianSphericalHarmonic), intent(in) :: this
-
-        real (wp), dimension(this%nlons,this%nlats), intent(in out) ::  ug
-        real (wp), dimension(this%nlons,this%nlats), intent(in out) ::vg
-        complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: vrtnm
-        complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) ::divnm
-        complex (wp), dimension(this%ntrunc+1,this%nlats) :: um
-        complex (wp), dimension(this%ntrunc+1,this%nlats) ::vm
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        class (GaussianSphericalHarmonic), intent(in)     :: this
+        real (wp),                         intent(in out) :: ug(:,:)
+        real (wp),                         intent(in out) :: vg(:,:)
+        complex (wp),                      intent(in)     :: vrtnm(:)
+        complex (wp),                      intent(in)     :: divnm(:)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in getvrtdiv!'
-            stop
+            error stop 'uninitialized sphere object in GET_VORTICITY_AND_DIVERGENCE_FROM_VELOCITIES!'
         end if
+
+        ! Allocate arrays
+        associate( &
+            mwaves => this%ntrunc + 1, &
+            nlats  => this%nlats &
+            )
+
+            allocate( um( mwaves, nlats ) )
+            allocate( vm( mwaves, nlats ) )
+
+        end associate
 
         call perform_multiple_real_fft(this, ug, um, 1)
         call perform_multiple_real_fft(this, vg, vm, 1)
@@ -694,11 +718,16 @@ contains
         call get_complex_spherical_harmonic_coefficients(this,um,vm,divnm,1,1)
         call get_complex_spherical_harmonic_coefficients(this,vm,um,vrtnm,1,-1)
 
+        ! Free memory
+        deallocate( um )
+        deallocate( vm )
+
     end subroutine get_vorticity_and_divergence_from_velocities
     !
     !*****************************************************************************************
     !
-    subroutine get_complex_spherical_harmonic_coefficients(this,am,bm,anm,isign1,isign2)
+    subroutine get_complex_spherical_harmonic_coefficients( this, &
+        am, bm, anm, isign1, isign2 )
         !
         !  given the arrays of fourier coeffs, am and bm,
         !  compute the complex spherical harmonic coeffs of:
@@ -717,67 +746,68 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in) :: this
-        integer (ip), intent(in) :: isign1
-        integer (ip), intent(in) ::isign2
-        complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: anm
-        complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) :: am
-        complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) ::bm
+        integer (ip),                      intent(in) :: isign1
+        integer (ip),                      intent(in) :: isign2
+        complex (wp)                                  :: anm(:)
+        complex (wp),                      intent(in) :: am(:,:)
+        complex (wp),                      intent(in) :: bm(:,:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        integer (ip) :: nlats
-        integer (ip) ::ntrunc
-        integer (ip) ::mwaves
-        integer (ip) ::j
-        integer (ip) ::m
-        integer (ip) ::n
-        integer (ip) ::nm
-        integer (ip) ::nmstrt
-        real (wp) ::  sign1
-        real (wp) ::sign2
-        real (wp) ::rm
+        integer (ip) :: j, n, m !! Counters
+        integer (ip) :: nm
+        integer (ip) :: nmstrt
+        real (wp)    :: rm
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in sumnm!'
-            stop
+            error stop 'uninitialized sphere object in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
         end if
 
-
-        sign1 = real(isign1, kind=wp)
-        sign2 = real(isign2, kind=wp)
         if (isign2 /= 1 .and. isign2 /= -1) then
-            print *, ' isign2 must be +1 or -1 in sumnm!'
-            print *, ' execution terminated in sumnm'
+            error stop 'isign2 must be +1 or -1 in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
         end if
-        if (isign1 /= 1 .and. isign1 /= -1) then
-            print *, ' isign1 must be +1 or -1 in sumnm!'
-            print *, ' execution terminated in sumnm'
-            stop
-        end if
-        nlats = this%nlats
-        ntrunc = this%ntrunc
-        mwaves = ntrunc+1
 
-        anm = 0.
-        do j=1,nlats
-            nmstrt = 0
-            do m = 1, mwaves
-                rm = m-1
-                do n   = 1, mwaves-m+1
-                    nm = nmstrt + n
-                    anm(nm) = anm(nm) + sign1*this%gwrc(j)*(cmplx(0.0_wp,rm,kind=wp) &
-                        * this%pnm(nm,j) * am(m,j) &
-                        + sign2 * this%hnm(nm,j) * bm(m,j))
+        if (isign1 /= 1 .and. isign1 /= -1) then
+            error stop 'isign1 must be +1 or -1 in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
+        end if
+
+        associate( &
+            sign1  => real(isign1, kind=wp), &
+            sign2  => real(isign2, kind=wp), &
+            nlats  => this%nlats, &
+            ntrunc => this%ntrunc, &
+            mwaves => this%ntrunc+1, &
+            gwrc   => this%gwrc, &
+            pnm    => this%pnm, &
+            hnm    => this%hnm &
+            )
+
+            anm = 0.0_wp
+
+            do j = 1,nlats
+                nmstrt = 0
+                do m = 1, mwaves
+                    rm = real( m - 1, kind=wp )
+                    do n   = 1, mwaves-m+1
+                        nm = nmstrt + n
+                        anm(nm) = &
+                            anm(nm) &
+                            + sign1 * gwrc(j) * (cmplx(0.0_wp,rm,kind=wp) &
+                            * pnm(nm,j) * am(m,j) &
+                            + sign2 * hnm(nm,j) * bm(m,j))
+                    end do
+                    nmstrt = nmstrt + mwaves - m +1
                 end do
-                nmstrt = nmstrt + mwaves - m +1
             end do
-        end do
+
+        end associate
 
     end subroutine get_complex_spherical_harmonic_coefficients
     !
     !*****************************************************************************************
     !
-    subroutine get_vector_gradient(this,divnm,ug,vg)
+    subroutine get_vector_gradient( this, divnm, ug, vg )
         !
         ! Purpose:
         !
@@ -807,12 +837,12 @@ contains
         end if
 
         associate( &
-            nlats => this%nlats, &
+            nlats  => this%nlats, &
             ntrunc => this%ntrunc, &
             mwaves => this%ntrunc + 1, &
-            re => this%RADIUS_OF_SPHERE, &
-            pnm => this%pnm, &
-            hnm => this%hnm &
+            re     => this%RADIUS_OF_SPHERE, &
+            pnm    => this%pnm, &
+            hnm    => this%hnm &
             )
 
             ! Allocate arrays
@@ -877,8 +907,8 @@ contains
 
         associate( &
             ntrunc => this%ntrunc, &
-            nmdim => (this%ntrunc+1)*(this%ntrunc+2)/2, &
-            indxn => this%indxn &
+            nmdim  => (this%ntrunc+1)*(this%ntrunc+2)/2, &
+            indxn  => this%indxn &
             )
 
             allocate( dataspec((ntrunc+1)*(ntrunc+2)/2) )
