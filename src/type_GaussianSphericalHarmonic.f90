@@ -20,7 +20,7 @@ module type_GaussianSphericalHarmonic
     public :: perform_spherical_harmonic_transform
     public :: perform_multiple_real_fft
     public :: cosgrad
-    public :: specsmooth
+    public :: perform_isotropic_spectral_smoothing
     public :: get_velocities_from_vorticity_and_divergence
     public :: get_vorticity_and_divergence_from_velocities
     public :: get_complex_spherical_harmonic_coefficients
@@ -31,22 +31,22 @@ module type_GaussianSphericalHarmonic
         !---------------------------------------------------------------------------------
         ! Class variables
         !---------------------------------------------------------------------------------
-        integer (ip),               public :: NLONS = 0
-        integer (ip),               public :: NLATS = 0
-        integer (ip),               public :: NTRUNC = 0
+        integer (ip),              public  :: NLONS = 0
+        integer (ip),              public  :: NLATS = 0
+        integer (ip),              public  :: NTRUNC = 0
         integer (ip), allocatable, private :: indxm(:)
         integer (ip), allocatable, private :: indxn(:)
         integer (ip), allocatable, private :: ifax(:)
-        real (wp),                  public  :: RADIUS_OF_SPHERE = 0.0_wp
-        real (wp), allocatable, private :: trigs(:)
-        real (wp), allocatable, public  :: gaulats(:)
-        real (wp), allocatable, private :: weights(:)
-        real (wp), allocatable, private :: gwrc(:)
-        real (wp), allocatable, public  :: lap(:)
-        real (wp), allocatable, private :: ilap(:)
-        real (wp), allocatable, private :: pnm(:,:)
-        real (wp), allocatable, private :: hnm(:,:)
-        logical,                 private :: initialized = .false.
+        real (wp),                 public  :: RADIUS_OF_SPHERE = 0.0_wp
+        real (wp), allocatable,    private :: trigs(:)
+        real (wp), allocatable,    public  :: gaulats(:)
+        real (wp), allocatable,    private :: weights(:)
+        real (wp), allocatable,    private :: gwrc(:)
+        real (wp), allocatable,    public  :: lap(:)
+        real (wp), allocatable,    private :: ilap(:)
+        real (wp), allocatable,    private :: pnm(:,:)
+        real (wp), allocatable,    private :: hnm(:,:)
+        logical,                   private :: initialized = .false.
     end type GaussianSphericalHarmonic
 
 contains
@@ -174,16 +174,15 @@ contains
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        integer (ip) :: i
+        integer (ip) :: i, j !! Counters
         integer (ip) :: iteration_counter
-        integer (ip) :: j
-        real (wp):: pp
-        real (wp):: p1
-        real (wp):: p2
-        real (wp):: p3
-        real (wp):: z
-        real (wp):: z1
-        logical :: success
+        real (wp)    :: pp
+        real (wp)    :: p1
+        real (wp)    :: p2
+        real (wp)    :: p3
+        real (wp)    :: z
+        real (wp)    :: z1
+        logical      :: success = .false.
         !--------------------------------------------------------------------------------
 
         if (size(sinlats) /= size(wts)) then
@@ -261,8 +260,8 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         real (wp), intent(in)     :: x
-        real (wp), intent(in out) ::  pmn(:)
-        real (wp), intent(in out) ::  hmn(:)
+        real (wp), intent(in out) :: pmn(:)
+        real (wp), intent(in out) :: hmn(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
@@ -386,7 +385,7 @@ contains
         !--------------------------------------------------------------------------------
         real (wp), allocatable :: input_output_data(:)
         real (wp), allocatable :: workspace(:)
-        integer (ip)            :: i, j, m, n !! Counters
+        integer (ip)           :: i, j, m, n !! Counters
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
@@ -506,9 +505,9 @@ contains
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
         complex (wp), allocatable  :: am(:,:)
-        integer (ip)                :: nmstrt
-        integer (ip)                :: nm !! index
-        integer (ip)                :: m, n, j !! Counters
+        integer (ip)               :: nmstrt
+        integer (ip)               :: nm !! index
+        integer (ip)               :: m, n, j !! Counters
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
@@ -589,10 +588,12 @@ contains
     !*****************************************************************************************
     !
     subroutine get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
-
-        ! compute U,V (winds times cos(lat)) from vrtnm,divnm
+        !
+        ! Purpose: compute U,V (winds times cos(lat)) from vrtnm,divnm
         ! (spectral coeffs of vorticity and divergence).
-
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in) :: this
         real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
         real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
@@ -686,14 +687,18 @@ contains
         !
         !  for example on how to use this routine, see subroutine getvrtdiv.
         !
-        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in) :: this
-
         integer (ip), intent(in) :: isign1
         integer (ip), intent(in) ::isign2
         complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: anm
         complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) :: am
         complex (wp), dimension(this%ntrunc+1,this%nlats), intent(in) ::bm
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip) :: nlats
         integer (ip) ::ntrunc
         integer (ip) ::mwaves
@@ -745,15 +750,22 @@ contains
     end subroutine get_complex_spherical_harmonic_coefficients
 
     subroutine cosgrad(this,divnm,ug,vg)
-
-        ! compute coslat * gradient of spectral coefficients (divnm)
+        !
+        ! Purpose:
+        !
+        ! Computes coslat * gradient of spectral coefficients (divnm)
         ! vector gradient returned on grid as (ug,vg)
-
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in) :: this
-
         real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
         real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
         complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: divnm
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         complex (wp), dimension(this%ntrunc+1,this%nlats) :: um
         complex (wp), dimension(this%ntrunc+1,this%nlats) ::vm
         integer (ip) :: nlats
@@ -798,37 +810,51 @@ contains
 
     end subroutine cosgrad
 
-    subroutine specsmooth(this,datagrid,smooth)
+    subroutine perform_isotropic_spectral_smoothing(this,datagrid,smooth)
 
         ! isotropic spectral smoothing of datagrid.
         ! input: smooth(this%ntrunc+1) - smoothing factor as a
         ! function of degree (this%indxn).
-
-        class (GaussianSphericalHarmonic), intent(in) :: this
-        real (wp), dimension(this%nlons,this%nlats), intent(in out) :: datagrid
-        real (wp), dimension(this%ntrunc+1), intent(in) :: smooth
-        complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2) :: dataspec
-        integer (ip) :: n
-        integer (ip) ::nm
-        integer (ip) ::nmdim
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        class (GaussianSphericalHarmonic), intent(in)     :: this
+        real (wp),                         intent(in out) :: datagrid(:,:)
+        real (wp),                         intent(in)     :: smooth(:)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        complex (wp), allocatable :: dataspec(:)
+        integer (ip)              :: n !! Counter
+        integer (ip)              ::nm !! Index
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in specsmooth!'
-            stop
+            error stop 'uninitialized sphere object in specsmooth!'
         end if
 
+        associate( &
+            ntrunc => this%ntrunc, &
+            nmdim => (this%ntrunc+1)*(this%ntrunc+2)/2, &
+            indxn => this%indxn &
+            )
 
-        nmdim = (this%ntrunc+1)*(this%ntrunc+2)/2
+            allocate( dataspec((ntrunc+1)*(ntrunc+2)/2) )
 
-        call perform_spherical_harmonic_transform(this, datagrid, dataspec, 1)
+            call perform_spherical_harmonic_transform(this, datagrid, dataspec, 1)
 
-        do nm=1,nmdim
-            n = this%indxn(nm)
-            dataspec(nm) = dataspec(nm)*smooth(n+1)
-        end do
+            do nm=1,nmdim
+                n = indxn(nm)
+                dataspec(nm) = dataspec(nm)*smooth(n + 1)
+            end do
 
-        call perform_spherical_harmonic_transform(this, datagrid, dataspec, -1)
+            call perform_spherical_harmonic_transform(this, datagrid, dataspec, -1)
 
-    end subroutine specsmooth
+        end associate
+
+        ! Free memory
+        deallocate( dataspec )
+
+    end subroutine perform_isotropic_spectral_smoothing
 
 end module type_GaussianSphericalHarmonic
