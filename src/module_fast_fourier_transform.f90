@@ -706,130 +706,206 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
-        !
-        !--------------------------------------------------------------------------------
-        ! Dictionary: calling arguments
-        !--------------------------------------------------------------------------------
-        real (wp),    intent(in out) :: a(*)
-        real (wp),    intent(in out) :: work(*)
-        real (wp),    intent(in)     :: trigs(:)
-        integer (ip), intent(in)     :: ifax(:)
-        integer (ip), intent(in)     :: inc
-        integer (ip), intent(in)     :: jump
-        integer (ip), intent(in)     :: n
-        integer (ip), intent(in)     :: lot
-        integer (ip), intent(in)     :: isign
+    subroutine fax (ifax,n,mode)
+        integer (ip), intent(out) :: ifax(:)
+        integer (ip), intent(in)  :: n
+        integer (ip), intent(in)  :: mode
 
-        !     dimension a(n),work(n),trigs(n),ifax(1)
-        !
-        !     subroutine "fft991" - multiple real/half-complex periodic
-        !     fast fourier transform
-        !
-        !     same as fft99 except that ordering of data corresponds to
-        !     that in mperform_multiple_real_fft2
-        !
-        !     procedure used to convert to half-length complex transform
-        !     is given by cooley, lewis and welch (j. sound vib., vol. 12
-        !     (1970), 315-337)
-        !
-        !     a is the array containing input and output data
-        !     work is an area of size (n+1)*lot
-        !     trigs is a previously prepared list of trig function values
-        !     ifax is a previously prepared list of factors of n/2
-        !     inc is the increment within each data 'vector'
-        !         (e.g. inc=1 for consecutively stored data)
-        !     jump is the increment between the start of each data vector
-        !     n is the length of the data vectors
-        !     lot is the number of data vectors
-        !     isign = +1 for transform from spectral to gridpoint
-        !           = -1 for transform from gridpoint to spectral
-        !
-        !     ordering of coefficients:
-        !         a(0),b(0),a(1),b(1),a(2),b(2),...,a(n/2),b(n/2)
-        !         where b(0)=b(n/2)=0; (n+2) locations required
-        !
-        !     ordering of data:
-        !         x(0),x(1),x(2),...,x(n-1)
-        !
-        !     vectorization is achieved on cray by doing the transforms in
-        !     parallel
-        !
-        !     *** n.b. n is assumed to be an even number
-        !
-        !     definition of transforms:
-        !     -------------------------
-        !
-        !     isign=+1: x(j)=sum(k=0,...,n-1)(c(k)*exp(2*i*j*k*pi/n))
-        !         where c(k)=a(k)+i*b(k) and c(n-k)=a(k)-i*b(k)
-        !
-        !     isign=-1: a(k)=(1/n)*sum(j=0,...,n-1)(x(j)*cos(2*j*k*pi/n))
-        !               b(k)=-(1/n)*sum(j=0,...,n-1)(x(j)*sin(2*j*k*pi/n))
-        !
-
-        integer (ip) :: nfax
-        integer (ip) :: nx
-        integer (ip) :: nh
-        integer (ip) :: ink
-        integer (ip) :: igo
-        integer (ip) :: ibase
-        integer (ip) :: jbase
-        integer (ip) :: i
-        integer (ip) :: j
+        integer (ip) :: nn
         integer (ip) :: k
         integer (ip) :: l
-        integer (ip) :: m
-        integer (ip) :: ia
-        integer (ip) :: la
-        integer (ip) :: ib
+        integer (ip) :: inc
+        integer (ip) :: nfax
+        integer (ip) :: ii
+        integer (ip) :: istop
+        integer (ip) :: i
+        integer (ip) :: item
 
-
-        nfax=ifax(1)
-        nx=n+1
-        nh=n/2
-        ink=inc+inc
-        if (isign == +1) goto 30
-
-        !     if necessary, transfer data to work area
-        igo=50
-        if (mod(nfax,2) == 1) goto 40
-        ibase=1
-        jbase=1
-        do l=1,lot
-            i=ibase
-            j=jbase
-            do m=1,n
-                work(j)=a(i)
-                i=i+inc
-                j=j+1
-            end do
-            ibase=ibase+jump
-            jbase=jbase+nx
-        end do
-        !
-        igo=60
+        nn=n
+        if (iabs(mode) == 1) goto 10
+        if (iabs(mode) == 8) goto 10
+        nn=n/2
+        if ((nn+nn) == n) goto 10
+        ifax(1)=-99
+        return
+10      k=1
+        !     test for factors of 4
+20      if (mod(nn,4)/=0) goto 30
+        k=k+1
+        ifax(k)=4
+        nn=nn/4
+        if (nn == 1) goto 80
+        goto 20
+           !     test for extra factor of 2
+30      if (mod(nn,2)/=0) goto 40
+        k=k+1
+        ifax(k)=2
+        nn=nn/2
+        if (nn == 1) goto 80
+        !     test for factors of 3
+40      if (mod(nn,3)/=0) goto 50
+        k=k+1
+        ifax(k)=3
+        nn=nn/3
+        if (nn == 1) goto 80
         goto 40
+        !     now find remaining factors
+50      l=5
+        inc=2
+        !     inc alternately takes on values 2 and 4
+60      if (mod(nn,l)/=0) goto 70
+        k=k+1
+        ifax(k)=l
+        nn=nn/l
+        if (nn == 1) goto 80
+        goto 60
+70      l=l+inc
+        inc=6-inc
+        goto 60
+80      ifax(1)=k-1
+        !     ifax(1) contains number of factors
+        nfax=ifax(1)
+        !     sort factors into ascending order
+        if (nfax == 1) goto 100
+        do ii=2,nfax
+            istop=nfax+2-ii
+            do i=2,istop
+                if (ifax(i+1)>=ifax(i)) goto 90
+                item=ifax(i)
+                ifax(i)=ifax(i+1)
+                ifax(i+1)=item
+90          continue
+            end do
+        end do
+100 continue
+
+end subroutine fax
+!
+!*****************************************************************************************
+!
+subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !
-    !   preprocessing (isign=+1)
-    !   ------------------------
+    !--------------------------------------------------------------------------------
+    ! Dictionary: calling arguments
+    !--------------------------------------------------------------------------------
+    real (wp),    intent(in out) :: a(*)
+    real (wp),    intent(in out) :: work(*)
+    real (wp),    intent(in)     :: trigs(:)
+    integer (ip), intent(in)     :: ifax(:)
+    integer (ip), intent(in)     :: inc
+    integer (ip), intent(in)     :: jump
+    integer (ip), intent(in)     :: n
+    integer (ip), intent(in)     :: lot
+    integer (ip), intent(in)     :: isign
+
+    !     dimension a(n),work(n),trigs(n),ifax(1)
     !
-30  continue
-    call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
+    !     subroutine "fft991" - multiple real/half-complex periodic
+    !     fast fourier transform
+    !
+    !     same as fft99 except that ordering of data corresponds to
+    !     that in mperform_multiple_real_fft2
+    !
+    !     procedure used to convert to half-length complex transform
+    !     is given by cooley, lewis and welch (j. sound vib., vol. 12
+    !     (1970), 315-337)
+    !
+    !     a is the array containing input and output data
+    !     work is an area of size (n+1)*lot
+    !     trigs is a previously prepared list of trig function values
+    !     ifax is a previously prepared list of factors of n/2
+    !     inc is the increment within each data 'vector'
+    !         (e.g. inc=1 for consecutively stored data)
+    !     jump is the increment between the start of each data vector
+    !     n is the length of the data vectors
+    !     lot is the number of data vectors
+    !     isign = +1 for transform from spectral to gridpoint
+    !           = -1 for transform from gridpoint to spectral
+    !
+    !     ordering of coefficients:
+    !         a(0),b(0),a(1),b(1),a(2),b(2),...,a(n/2),b(n/2)
+    !         where b(0)=b(n/2)=0; (n+2) locations required
+    !
+    !     ordering of data:
+    !         x(0),x(1),x(2),...,x(n-1)
+    !
+    !     vectorization is achieved on cray by doing the transforms in
+    !     parallel
+    !
+    !     *** n.b. n is assumed to be an even number
+    !
+    !     definition of transforms:
+    !     -------------------------
+    !
+    !     isign=+1: x(j)=sum(k=0,...,n-1)(c(k)*exp(2*i*j*k*pi/n))
+    !         where c(k)=a(k)+i*b(k) and c(n-k)=a(k)-i*b(k)
+    !
+    !     isign=-1: a(k)=(1/n)*sum(j=0,...,n-1)(x(j)*cos(2*j*k*pi/n))
+    !               b(k)=-(1/n)*sum(j=0,...,n-1)(x(j)*sin(2*j*k*pi/n))
+    !
+
+    integer (ip) :: nfax
+    integer (ip) :: nx
+    integer (ip) :: nh
+    integer (ip) :: ink
+    integer (ip) :: igo
+    integer (ip) :: ibase
+    integer (ip) :: jbase
+    integer (ip) :: i
+    integer (ip) :: j
+    integer (ip) :: k
+    integer (ip) :: l
+    integer (ip) :: m
+    integer (ip) :: ia
+    integer (ip) :: la
+    integer (ip) :: ib
+
+
+    nfax=ifax(1)
+    nx=n+1
+    nh=n/2
+    ink=inc+inc
+    if (isign == +1) goto 30
+
+    !     if necessary, transfer data to work area
+    igo=50
+    if (mod(nfax,2) == 1) goto 40
+    ibase=1
+    jbase=1
+    do l=1,lot
+        i=ibase
+        j=jbase
+        do m=1,n
+            work(j)=a(i)
+            i=i+inc
+            j=j+1
+        end do
+        ibase=ibase+jump
+        jbase=jbase+nx
+    end do
+    !
     igo=60
+    goto 40
 !
-!   complex transform
-!   -----------------
+!   preprocessing (isign=+1)
+!   ------------------------
 !
+30 continue
+   call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
+   igo=60
+   !
+   !   complex transform
+   !   -----------------
+   !
 40 continue
    ia=1
    la=1
    do k=1,nfax
        if (igo == 60) goto 60
-50 continue
-   call vpassm (a(ia),a(ia+inc),work(1),work(2),trigs, &
-       ink,2,jump,nx,lot,nh,ifax(k+1),la)
-   igo=60
-   goto 70
+       call vpassm (a(ia),a(ia+inc),work(1),work(2),trigs, &
+           ink,2,jump,nx,lot,nh,ifax(k+1),la)
+       igo=60
+       goto 70
 60 continue
    call vpassm (work(1),work(2),a(ia),a(ia+inc),trigs, &
        2,ink,nx,jump,lot,nh,ifax(k+1),la)
@@ -864,7 +940,7 @@ contains
        a(ib+inc)=0.0_wp
        ib=ib+jump
    end do
-   goto 14011
+   goto 140
 
    !     postprocessing (isign=-1):
    !     --------------------------
@@ -872,87 +948,10 @@ contains
 130 continue
     call perform_postprocessing_step_for_fft99 (work,a,trigs,inc,jump,n,lot)
 
-14011 continue
+140 continue
 
-  end subroutine perform_fft991
-    !
-    !*****************************************************************************************
-    !
-  subroutine fax (ifax,n,mode)
-      integer (ip), intent(out) :: ifax(:)
-      integer (ip), intent(in)  :: n
-      integer (ip), intent(in)  :: mode
-
-      integer (ip) :: nn
-      integer (ip) :: k
-      integer (ip) :: l
-      integer (ip) :: inc
-      integer (ip) :: nfax
-      integer (ip) :: ii
-      integer (ip) :: istop
-      integer (ip) :: i
-      integer (ip) :: item
-
-      nn=n
-      if (iabs(mode) == 1) goto 10
-      if (iabs(mode) == 8) goto 10
-      nn=n/2
-      if ((nn+nn) == n) goto 10
-      ifax(1)=-99
-      return
-10    k=1
-      !     test for factors of 4
-20    if (mod(nn,4)/=0) goto 30333
-      k=k+1
-      ifax(k)=4
-      nn=nn/4
-      if (nn == 1) goto 80
-      goto 20
-      !     test for extra factor of 2
-30333 if (mod(nn,2)/=0) goto 40
-      k=k+1
-      ifax(k)=2
-      nn=nn/2
-      if (nn == 1) goto 80
-      !     test for factors of 3
-40    if (mod(nn,3)/=0) goto 50
-      k=k+1
-      ifax(k)=3
-      nn=nn/3
-      if (nn == 1) goto 80
-      goto 40
-      !     now find remaining factors
-50    l=5
-      inc=2
-      !     inc alternately takes on values 2 and 4
-60    if (mod(nn,l)/=0) goto 70
-      k=k+1
-      ifax(k)=l
-      nn=nn/l
-      if (nn == 1) goto 80
-      goto 60
-70    l=l+inc
-      inc=6-inc
-      goto 60
-80    ifax(1)=k-1
-      !     ifax(1) contains number of factors
-      nfax=ifax(1)
-      !     sort factors into ascending order
-      if (nfax == 1) goto 11011
-      do ii=2,nfax
-          istop=nfax+2-ii
-          do i=2,istop
-              if (ifax(i+1)>=ifax(i)) goto 90
-              item=ifax(i)
-              ifax(i)=ifax(i+1)
-              ifax(i+1)=item
-90        continue
-          end do
-      end do
-11011 continue
-
-  end subroutine fax
-      !
-      !*****************************************************************************************
-      !
-  end module module_fast_fourier_transform
+end subroutine perform_fft991
+  !
+  !*****************************************************************************************
+  !
+end module module_fast_fourier_transform
