@@ -19,7 +19,7 @@ module type_GaussianSphericalHarmonic
     public :: destroy_gaussian_spherical_harmonic
     public :: perform_spherical_harmonic_transform
     public :: perform_multiple_real_fft
-    public :: cosgrad
+    public :: get_vector_gradient
     public :: perform_isotropic_spectral_smoothing
     public :: get_velocities_from_vorticity_and_divergence
     public :: get_vorticity_and_divergence_from_velocities
@@ -589,62 +589,86 @@ contains
     !
     subroutine get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
         !
-        ! Purpose: compute U,V (winds times cos(lat)) from vrtnm,divnm
+        ! Purpose:
+        !
+        ! Computes U,V (winds times cos(lat)) from vrtnm,divnm
         ! (spectral coeffs of vorticity and divergence).
+        !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
-        class (GaussianSphericalHarmonic), intent(in) :: this
-        real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
-        real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
-        complex (wp), intent(in) :: vrtnm((this%ntrunc+1)*(this%ntrunc+2)/2)
-        complex (wp), intent(in) ::divnm((this%ntrunc+1)*(this%ntrunc+2)/2)
-        complex (wp) :: um(this%ntrunc+1,this%nlats)
-        complex (wp) ::vm(this%ntrunc+1,this%nlats)
-        integer (ip) :: nlats
-        integer (ip) ::ntrunc
-        integer (ip) ::mwaves
-        integer (ip) ::m
-        integer (ip) ::j
-        integer (ip) ::n
-        integer (ip) ::nm
-        integer (ip) ::nmstrt
-        real (wp) ::  rm
+        class (GaussianSphericalHarmonic), intent(in)  :: this
+        real (wp),                         intent(out) :: ug(:,:)
+        real (wp),                         intent(out) :: vg(:,:)
+        complex (wp),                      intent(in)  :: vrtnm(:)
+        complex (wp),                      intent(in)  :: divnm(:)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
+        integer (ip)              :: n, m, j !! Counters
+        integer (ip)              :: nm
+        integer (ip)              :: nmstrt
+        real (wp)                 :: rm
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
             print *, 'uninitialized sphere object in getuv!'
             stop
         end if
 
+        associate( &
+            nlats  => this%nlats, &
+            ntrunc => this%ntrunc, &
+            mwaves => this%ntrunc + 1, &
+            ilap   => this%ilap, &
+            re     => this%RADIUS_OF_SPHERE, &
+            pnm    => this%pnm, &
+            hnm    => this%hnm &
+            )
 
-        nlats = this%nlats
-        ntrunc = this%ntrunc
-        mwaves = ntrunc+1
+            ! Allocate arrays
+            allocate( um(mwaves, nlats) )
+            allocate( vm(mwaves, nlats) )
 
-        do j=1,nlats
-            nmstrt = 0
-            do m=1,mwaves
-                rm = m-1
-                um(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
-                vm(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
-                do n=1,mwaves-m+1
-                    nm = nmstrt + n
-                    um(m,j) = um(m,j) + (this%ilap(nm)/this%RADIUS_OF_SPHERE)*( &
-                        cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*this%pnm(nm,j) + &
-                        vrtnm(nm)*this%hnm(nm,j) )
-                    vm(m,j) = vm(m,j) + (this%ilap(nm)/this%RADIUS_OF_SPHERE)*( &
-                        cmplx(0.0,rm, kind=wp)*vrtnm(nm)*this%pnm(nm,j) - &
-                        divnm(nm)*this%hnm(nm,j) )
+            do j = 1, nlats
+                nmstrt = 0
+                do m = 1, mwaves
+                    rm = real( m - 1, kind=wp)
+                    um(m,j) = 0.0_wp
+                    vm(m,j) = 0.0_wp
+                    do n = 1, mwaves - m + 1
+
+                        nm = nmstrt + n
+
+                        um(m,j) = &
+                            um(m,j) + (ilap(nm)/re)*( &
+                            cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*pnm(nm,j) + &
+                            vrtnm(nm)*hnm(nm,j) )
+
+                        vm(m,j) = &
+                            vm(m,j) + (ilap(nm)/re)*( &
+                            cmplx(0.0,rm, kind=wp) * vrtnm(nm)*pnm(nm,j) - &
+                            divnm(nm)*hnm(nm,j) )
+
+                    end do
+                    nmstrt = nmstrt + mwaves - m + 1
                 end do
-                nmstrt = nmstrt + mwaves-m+1
             end do
-        end do
+        end associate
 
         call perform_multiple_real_fft(this, ug, um, -1)
         call perform_multiple_real_fft(this, vg, vm, -1)
 
-    end subroutine get_velocities_from_vorticity_and_divergence
+        ! Free memory
+        deallocate( um )
+        deallocate( vm )
 
+    end subroutine get_velocities_from_vorticity_and_divergence
+    !
+    !*****************************************************************************************
+    !
     subroutine get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
 
         ! compute vrtnm,divnm (spectral coeffs of vorticity and
@@ -671,7 +695,9 @@ contains
         call get_complex_spherical_harmonic_coefficients(this,vm,um,vrtnm,1,-1)
 
     end subroutine get_vorticity_and_divergence_from_velocities
-
+    !
+    !*****************************************************************************************
+    !
     subroutine get_complex_spherical_harmonic_coefficients(this,am,bm,anm,isign1,isign2)
         !
         !  given the arrays of fourier coeffs, am and bm,
@@ -748,8 +774,10 @@ contains
         end do
 
     end subroutine get_complex_spherical_harmonic_coefficients
-
-    subroutine cosgrad(this,divnm,ug,vg)
+    !
+    !*****************************************************************************************
+    !
+    subroutine get_vector_gradient(this,divnm,ug,vg)
         !
         ! Purpose:
         !
@@ -759,57 +787,71 @@ contains
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
-        class (GaussianSphericalHarmonic), intent(in) :: this
-        real (wp), dimension(this%nlons,this%nlats), intent(out) ::  ug
-        real (wp), dimension(this%nlons,this%nlats), intent(out) ::vg
-        complex (wp), dimension((this%ntrunc+1)*(this%ntrunc+2)/2), intent(in) :: divnm
+        class (GaussianSphericalHarmonic), intent(in)  :: this
+        real (wp),                         intent(out) :: ug(:,:)
+        real (wp),                         intent(out) :: vg(:,:)
+        complex (wp),                      intent(in)  :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), dimension(this%ntrunc+1,this%nlats) :: um
-        complex (wp), dimension(this%ntrunc+1,this%nlats) ::vm
-        integer (ip) :: nlats
-        integer (ip) ::ntrunc
-        integer (ip) ::mwaves
-        integer (ip) ::j
-        integer (ip) ::m
-        integer (ip) ::n
-        integer (ip) ::nm
-        integer (ip) ::nmstrt
-        real (wp) :: rm
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
+        integer (ip)              :: n, m, j !! Counters
+        integer (ip)              :: nm
+        integer (ip)              :: nmstrt
+        real (wp)                 :: rm
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in cosgrad!'
-            stop
+            error stop 'uninitialized sphere object in GET_VECTOR_GRADIENT!'
         end if
 
+        associate( &
+            nlats => this%nlats, &
+            ntrunc => this%ntrunc, &
+            mwaves => this%ntrunc + 1, &
+            re => this%RADIUS_OF_SPHERE, &
+            pnm => this%pnm, &
+            hnm => this%hnm &
+            )
 
-        nlats = this%nlats
-        ntrunc = this%ntrunc
-        mwaves = ntrunc+1
+            ! Allocate arrays
+            allocate( um( mwaves, nlats ) )
+            allocate( vm( mwaves, nlats ) )
 
-        do j=1,nlats
-            nmstrt = 0
-            do m=1,mwaves
-                rm = (m-1)
-                um(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
-                vm(m,j) = cmplx(0.0_wp,0.0_wp, kind=wp)
-                do n=1,mwaves-m+1
-                    nm = nmstrt + n
-                    um(m,j) = um(m,j) + (1./this%RADIUS_OF_SPHERE)* &
-                        cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*this%pnm(nm,j)
-                    vm(m,j) = vm(m,j) - (1./this%RADIUS_OF_SPHERE)* &
-                        divnm(nm)*this%hnm(nm,j)
+            do j = 1, nlats
+                nmstrt = 0
+                do m = 1, mwaves
+                    rm = real( m - 1, kind=wp)
+                    um(m,j) = 0.0_wp
+                    vm(m,j) = 0.0_wp
+                    do n = 1, mwaves - m + 1
+                        nm = nmstrt + n
+                        um(m,j) = &
+                            um(m,j) + (1.0_wp/re)* &
+                            cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*pnm(nm,j)
+
+                        vm(m,j) = &
+                            vm(m,j) - (1.0_wp/re)* &
+                            divnm(nm)*hnm(nm,j)
+                    end do
+                    nmstrt = nmstrt + mwaves - m + 1
                 end do
-                nmstrt = nmstrt + mwaves - m +1
             end do
-        end do
+
+        end associate
 
         call perform_multiple_real_fft(this, ug, um, -1)
         call perform_multiple_real_fft(this, vg, vm, -1)
 
-    end subroutine cosgrad
+        ! Free memory
+        deallocate( um )
+        deallocate( vm )
 
+    end subroutine get_vector_gradient
+    !
+    !*****************************************************************************************
+    !
     subroutine perform_isotropic_spectral_smoothing(this,datagrid,smooth)
 
         ! isotropic spectral smoothing of datagrid.
@@ -830,7 +872,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in specsmooth!'
+            error stop 'uninitialized object in PERFORM_ISOTROPIC_SPECTRAL_SMOOTHING!'
         end if
 
         associate( &
@@ -843,7 +885,7 @@ contains
 
             call perform_spherical_harmonic_transform(this, datagrid, dataspec, 1)
 
-            do nm=1,nmdim
+            do nm =1, nmdim
                 n = indxn(nm)
                 dataspec(nm) = dataspec(nm)*smooth(n + 1)
             end do
@@ -856,5 +898,7 @@ contains
         deallocate( dataspec )
 
     end subroutine perform_isotropic_spectral_smoothing
-
+    !
+    !*****************************************************************************************
+    !
 end module type_GaussianSphericalHarmonic
