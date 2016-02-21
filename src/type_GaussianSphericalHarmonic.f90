@@ -369,105 +369,126 @@ contains
     !*****************************************************************************************
     !
     subroutine perform_multiple_real_fft(this, data, coeff, idir)
-
+        !
+        ! Purpose:
+        !
         ! real multiple fft (uses temperton fft991)
-
-        class (GaussianSphericalHarmonic), intent(in) :: this
-
-        real (wp), dimension(this%nlons,this%nlats), intent(in out) :: data
-        real (wp), dimension(this%nlats*(this%nlons+2)) :: wrk1
-        real (wp), dimension(this%nlats*(this%nlons+1)) :: wrk2
-        complex (wp), intent(in out) :: coeff(this%ntrunc+1,this%nlats)
-        integer (ip) ::  nlons
-        integer (ip) ::nlats
-        integer (ip) ::ntrunc
-        integer (ip) ::mwaves
-        integer (ip) ::i
-        integer (ip) ::j
-        integer (ip) ::m
-        integer (ip) ::n
-        integer (ip), intent(in) :: idir
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        class (GaussianSphericalHarmonic), intent(in)     :: this
+        real (wp),                         intent(in out) :: data(:,:)
+        complex (wp),                      intent(in out) :: coeff(:,:)
+        integer (ip),                      intent(in)     :: idir
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        real (wp), allocatable :: input_output_data(:)
+        real (wp), allocatable :: workspace(:)
+        integer (ip)            :: i, j, m, n !! Counters
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in perform_multiple_real_fft!'
-            stop
+            error stop 'uninitialized sphere object in perform_multiple_real_fft!'
         end if
 
-
-        nlons = this%nlons
-        nlats = this%nlats
-        ntrunc = this%ntrunc
-        if (ntrunc > nlons/2) then
-            print *, 'ntrunc must be less than or equal to nlons in perform_multiple_real_fft'
-            stop
+        if ( this%ntrunc > this%nlons/2) then
+            error stop 'ntrunc must be less than or equal to nlons in perform_multiple_real_fft'
         end if
 
-        mwaves = ntrunc+1
+        !--------------------------------------------------------------------------------
+        ! Perform transform
+        !--------------------------------------------------------------------------------
 
-        ! == > forward transform.
+        associate( &
+            nlons => this%nlons, &
+            nlats => this%nlats, &
+            ntrunc => this%ntrunc, &
+            mwaves => this%ntrunc + 1, &
+            trigs => this%trigs, &
+            ifax => this%ifax &
+            )
 
-        select case (idir)
-            case (+1)
+            !--------------------------------------------------------------------------------
+            ! Allocate arrays
+            !--------------------------------------------------------------------------------
+
+            allocate( input_output_data( nlats * (nlons + 2) ) )
+            allocate( workspace( nlats * (nlons + 1) ) )
+
+            ! == > forward transform.
+
+            select case (idir)
+                case (+1)
     		
-                ! == > copy the data into the work array.
-                !    transforms are computed pairwise using a complex fft.
+                    ! == > copy the data into the work array.
+                    !    transforms are computed pairwise using a complex fft.
     		
-                n = 0
-                wrk1 = 0.0_wp
-                do j=1,nlats
-                    do i=1,nlons+2
-                        n = n + 1
-                        wrk1(n) = 0.0_wp
-                        if (i <= nlons) then
-                            wrk1(n) = data(i,j)
-                        end if
+                    n = 0
+                    input_output_data = 0.0_wp
+                    do j=1,nlats
+                        do i=1,nlons+2
+                            n = n + 1
+                            input_output_data(n) = 0.0_wp
+                            if (i <= nlons) then
+                                input_output_data(n) = data(i,j)
+                            end if
+                        end do
                     end do
-                end do
     		
-                call perform_fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,-1)
+                    call perform_fft991(input_output_data,workspace,trigs,ifax,1,nlons+2,nlons,nlats,-1)
     		
-                n = -1
-                do j=1,nlats
-                    do m=1,(nlons/2)+1
-                        n = n + 2
-                        if (m <= mwaves) then
-                            coeff(m,j) = cmplx(wrk1(n),wrk1(n+1), kind=wp)
-                        end if
+                    n = -1
+                    do j=1,nlats
+                        do m=1,(nlons/2)+1
+                            n = n + 2
+                            if (m <= mwaves) then
+                                coeff(m,j) = cmplx(input_output_data(n),input_output_data(n+1), kind=wp)
+                            end if
+                        end do
                     end do
-                end do
-            case (-1)
+                case (-1)
     		
-                wrk1 = 0.0_wp
-                n = -1
-                do j=1,nlats
-                    do m=1,(nlons/2)+1
-                        n = n + 2
-                        if (m <= mwaves) then
-                            wrk1(n) = real(coeff(m,j), kind=wp)
-                            wrk1(n+1) = aimag(coeff(m,j))
-                        end if
+                    input_output_data = 0.0_wp
+                    n = -1
+                    do j=1,nlats
+                        do m=1,(nlons/2)+1
+                            n = n + 2
+                            if (m <= mwaves) then
+                                input_output_data(n) = real(coeff(m,j), kind=wp)
+                                input_output_data(n+1) = aimag(coeff(m,j))
+                            end if
+                        end do
                     end do
-                end do
     		
-                call perform_fft991(wrk1,wrk2,this%trigs,this%ifax,1,nlons+2,nlons,nlats,1)
+                    call perform_fft991(input_output_data,workspace,trigs,ifax,1,nlons+2,nlons,nlats,1)
     		
-                n = 0
-                do j=1,nlats
-                    do i=1,nlons+2
-                        n = n + 1
-                        if (i <= nlons) then
-                            data(i,j) = wrk1(n)
-                        end if
+                    n = 0
+                    do j=1,nlats
+                        do i=1,nlons+2
+                            n = n + 1
+                            if (i <= nlons) then
+                                data(i,j) = input_output_data(n)
+                            end if
+                        end do
                     end do
-                end do
-            case default
-                write(6,*) ' idir must be +1 or -1 in perform_multiple_real_fft!'
-                write(6,*) ' execution terminated.'
-                stop
-        end select
+                case default
+                    error stop 'Calling argument idir must be +1 or -1 in perform_multiple_real_fft!'
+            end select
+        end associate
+
+        !--------------------------------------------------------------------------------
+        ! Free memory
+        !--------------------------------------------------------------------------------
+
+        deallocate( input_output_data )
+        deallocate( workspace )
 
     end subroutine perform_multiple_real_fft
-
+    !
+    !*****************************************************************************************
+    !
     subroutine spharm(this, ugrid, anm, idir)
 
         ! spherical harmonic transform

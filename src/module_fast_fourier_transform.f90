@@ -601,15 +601,19 @@ end subroutine perform_postprocessing_step_for_fft99
 !##########################################################################
 
 subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
-    integer (ip), intent(in)    :: inc
-    integer (ip), intent(in)    ::jump
-    integer (ip), intent(in)    ::n
-    integer (ip), intent(in)    ::lot
-    integer (ip), intent(in)    ::isign
-    integer (ip), intent(in) :: ifax(:)
-    real (wp),    intent(in)    :: trigs(:)
+    !
+    !--------------------------------------------------------------------------------
+    ! Dictionary: calling arguments
+    !--------------------------------------------------------------------------------
     real (wp),    intent(in out) :: a(*)
-    real (wp),    intent(in out) ::work(*)
+    real (wp),    intent(in out) :: work(*)
+    real (wp),    intent(in)     :: trigs(:)
+    integer (ip), intent(in)     :: ifax(:)
+    integer (ip), intent(in)     :: inc
+    integer (ip), intent(in)     :: jump
+    integer (ip), intent(in)     :: n
+    integer (ip), intent(in)     :: lot
+    integer (ip), intent(in)     :: isign
 
     !     dimension a(n),work(n),trigs(n),ifax(1)
     !
