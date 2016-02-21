@@ -551,9 +551,9 @@ contains
       end do
 
   end subroutine fftrig
-      !
-      !*****************************************************************************************
-      !
+    !
+    !*****************************************************************************************
+    !
   subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
       integer (ip), intent(in)  :: inc1
       integer (ip), intent(in)  :: inc2
@@ -648,10 +648,10 @@ contains
               ja=1
               ib=ia+iink
               jb=ja+jink
-              do 20 l=1,la
+              do l=1,la
                   i=ibase
                   j=jbase
-                  do 15 ijk=1,lot
+                  do ijk=1,lot
                       c(ja+j)=a(ia+i)+a(ib+i)
                       d(ja+j)=b(ia+i)+b(ib+i)
                       c(jb+j)=a(ia+i)-a(ib+i)
@@ -659,20 +659,22 @@ contains
                       i=i+inc3
                       j=j+inc4
 15                continue
+                  end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
 20            continue
+              end do
               if (la == m) return
               la1=la+1
               jbase=jbase+jump
-              do 40 k=la1,m,la
+              do k=la1,m,la
                   kb=k+k-2
                   c1=trigs(kb+1)
                   s1=trigs(kb+2)
-                  do 30 l=1,la
+                  do l=1,la
                       i=ibase
                       j=jbase
-                      do 25 ijk=1,lot
+                      do ijk=1,lot
                           c(ja+j)=a(ia+i)+a(ib+i)
                           d(ja+j)=b(ia+i)+b(ib+i)
                           c(jb+j)=c1*(a(ia+i)-a(ib+i))-s1*(b(ia+i)-b(ib+i))
@@ -680,11 +682,14 @@ contains
                           i=i+inc3
                           j=j+inc4
 25                    continue
+                      end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
 30                continue
+                  end do
                   jbase=jbase+jump
 40            continue
+              end do
           !     return
 
           !   coding for factor 3
@@ -696,10 +701,10 @@ contains
               jb=ja+jink
               ic=ib+iink
               jc=jb+jink
-              do 6060 l=1,la
+              do l=1,la
                   i=ibase
                   j=jbase
-                  do 55 ijk=1,lot
+                  do ijk=1,lot
                       c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                       d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                       c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))
@@ -709,23 +714,25 @@ contains
                       i=i+inc3
                       j=j+inc4
 55                continue
+                  end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
 6060          continue
+              end do
               if (la == m) return
               la1=la+1
               jbase=jbase+jump
-              do 8080 k=la1,m,la
+              do k=la1,m,la
                   kb=k+k-2
                   kc=kb+kb
                   c1=trigs(kb+1)
                   s1=trigs(kb+2)
                   c2=trigs(kc+1)
                   s2=trigs(kc+2)
-                  do 7070 l=1,la
+                  do l=1,la
                       i=ibase
                       j=jbase
-                      do 65 ijk=1,lot
+                      do ijk=1,lot
                           c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                           d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                           c(jb+j)=                                                           &
@@ -743,11 +750,14 @@ contains
                           i=i+inc3
                           j=j+inc4
 65                    continue
+                      end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
 7070              continue
+                  end do
                   jbase=jbase+jump
 8080          continue
+              end do
           !     return
 
           !   coding for factor 4
@@ -761,10 +771,10 @@ contains
               jc=jb+jink
               id=ic+iink
               jd=jc+jink
-              do 100 l=1,la
+              do l=1,la
                   i=ibase
                   j=jbase
-                  do 95 ijk=1,lot
+                  do ijk=1,lot
                       c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
                       c(jc+j)=(a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))
                       d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
@@ -776,13 +786,15 @@ contains
                       i=i+inc3
                       j=j+inc4
 95                continue
+                  end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
 100           continue
+              end do
               if (la == m) return
               la1=la+1
               jbase=jbase+jump
-              do 120 k=la1,m,la
+              do k=la1,m,la
                   kb=k+k-2
                   kc=kb+kb
                   kd=kc+kb
@@ -792,10 +804,10 @@ contains
                   s2=trigs(kc+2)
                   c3=trigs(kd+1)
                   s3=trigs(kd+2)
-                  do 110 l=1,la
+                  do l=1,la
                       i=ibase
                       j=jbase
-                      do 105 ijk=1,lot
+                      do ijk=1,lot
                           c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
                           d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
                           c(jc+j)=                                     &
@@ -819,11 +831,14 @@ contains
                           i=i+inc3
                           j=j+inc4
 105                   continue
+                      end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
 110               continue
+                  end do
                   jbase=jbase+jump
 120           continue
+              end do
           !     return
 
           !   coding for factor 5
@@ -839,10 +854,10 @@ contains
               jd=jc+jink
               ie=id+iink
               je=jd+jink
-              do 140 l=1,la
+              do l=1,la
                   i=ibase
                   j=jbase
-                  do 135 ijk=1,lot
+                  do ijk=1,lot
                       c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                       d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
                       c(jb+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
@@ -864,13 +879,15 @@ contains
                       i=i+inc3
                       j=j+inc4
 135               continue
+                  end do
                   ibase=ibase+inc1
                   jbase=jbase+inc2
 140           continue
+              end do
               if (la == m) return
               la1=la+1
               jbase=jbase+jump
-              do 160 k=la1,m,la
+              do k=la1,m,la
                   kb=k+k-2
                   kc=kb+kb
                   kd=kc+kb
@@ -883,10 +900,10 @@ contains
                   s3=trigs(kd+2)
                   c4=trigs(ke+1)
                   s4=trigs(ke+2)
-                  do 150 l=1,la
+                  do l=1,la
                       i=ibase
                       j=jbase
-                      do 145 ijk=1,lot
+                      do ijk=1,lot
                           c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                           d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
                           c(jb+j)=                                                          &
@@ -932,11 +949,14 @@ contains
                           i=i+inc3
                           j=j+inc4
 145                   continue
+                      end do
                       ibase=ibase+inc1
                       jbase=jbase+inc2
 150               continue
+                  end do
                   jbase=jbase+jump
 160           continue
+              end do
 
       end select
 

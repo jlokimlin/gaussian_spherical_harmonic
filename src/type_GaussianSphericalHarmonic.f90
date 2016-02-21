@@ -943,4 +943,4 @@ contains
     !
     !*****************************************************************************************
     !
-  end module type_GaussianSphericalHarmonic
+end module type_GaussianSphericalHarmonic
