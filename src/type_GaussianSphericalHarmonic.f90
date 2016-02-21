@@ -17,13 +17,13 @@ module type_GaussianSphericalHarmonic
     public :: GaussianSphericalHarmonic
     public :: initialize_gaussian_spherical_harmonic
     public :: destroy_gaussian_spherical_harmonic
-    public :: spharm
+    public :: perform_spherical_harmonic_transform
     public :: perform_multiple_real_fft
     public :: cosgrad
     public :: specsmooth
-    public :: getuv
-    public :: getvrtdiv
-    public :: sumnm
+    public :: get_velocities_from_vorticity_and_divergence
+    public :: get_vorticity_and_divergence_from_velocities
+    public :: get_complex_spherical_harmonic_coefficients
     public :: compute_latitudes_and_gaussian_weights
     public :: compute_associated_legendre_functions
 
@@ -489,93 +489,106 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine spharm(this, ugrid, anm, idir)
+    subroutine perform_spherical_harmonic_transform(this, ugrid, anm, idir)
 
-        ! spherical harmonic transform
-
-        class (GaussianSphericalHarmonic), intent(in) :: this
-
-        real (wp)    :: ugrid(this%nlons,this%nlats)
-        complex (wp) :: anm((this%ntrunc+1)*(this%ntrunc+2)/2)
-        complex (wp) :: am(this%ntrunc+1,this%nlats)
-        integer (ip) :: nlats
-        integer (ip) ::ntrunc
-        integer (ip) ::mwaves
-        integer (ip) ::nmstrt
-        integer (ip) ::nm
-        integer (ip) ::m
-        integer (ip) ::n
-        integer (ip) ::j
-        integer (ip), intent(in) :: idir
+        ! Purpose:
+        !
+        ! Peforms the spherical harmonic transform
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        class (GaussianSphericalHarmonic), intent(in)      :: this
+        real (wp),                         intent (in out) :: ugrid(:,:)
+        complex (wp),                      intent (in out) :: anm(:)
+        integer (ip),                      intent(in)      :: idir
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        complex (wp), allocatable  :: am(:,:)
+        integer (ip)                :: nmstrt
+        integer (ip)                :: nm !! index
+        integer (ip)                :: m, n, j !! Counters
+        !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            print *, 'uninitialized sphere object in spharm!'
-            stop
+            error stop 'uninitialized object in PERFORM_SPHERICAL_HARMONIC_TRANSFORM!'
         end if
 
-        nlats = this%nlats
-        ntrunc = this%ntrunc
-        mwaves = ntrunc+1
+        associate( &
+            nlats   => this%nlats, &
+            ntrunc  => this%ntrunc, &
+            mwaves  => this%ntrunc + 1, &
+            pnm     => this%pnm, &
+            weights => this%weights &
+            )
 
-        select case (idir)
-            case (+1)
+            ! Allocate array
+            allocate( am(mwaves, nlats) )
+
+            select case (idir)
+                case (+1)
     		
-                ! == >  GRID SPACE TO SPECTRAL SPACE TRANSFORMATION
-                !     FIRST, INITIALIZE ARRAY.
+                    ! == >  grid space to spectral space transformation
+                    !     first, initialize array.
     		
-                anm = 0.
+                    anm = 0.0_wp
     		
-                ! == > perform ffts on each latitude.
+                    ! == > perform ffts on each latitude.
     		
-                call perform_multiple_real_fft(this, ugrid, am, 1)
+                    call perform_multiple_real_fft(this, ugrid, am, 1)
     		
-                ! == >  SUM OVER ALL GAUSSIAN LATITUDES FOR EACH MODE AND EACH WAVE TO
-                !     OBTAIN THE TRANSFORMED VARIABLE IN SPECTRAL SPACE.
+                    ! == >  sum over all gaussian latitudes for each mode and each wave to
+                    !     obtain the transformed variable in spectral space.
     		
-                do j=1,nlats
-                    nmstrt = 0
-                    do m = 1, mwaves
-                        do n = 1, mwaves-m+1
-                            nm = nmstrt + n
-                            anm(nm)=anm(nm)+this%pnm(nm,j)*this%weights(j)*am(m,j)
+                    do j=1,nlats
+                        nmstrt = 0
+                        do m = 1, mwaves
+                            do n = 1, mwaves-m+1
+                                nm = nmstrt + n
+                                anm(nm)=anm(nm)+pnm(nm,j)*weights(j)*am(m,j)
+                            end do
+                            nmstrt = nmstrt + mwaves-m+1
                         end do
-                        nmstrt = nmstrt + mwaves-m+1
                     end do
-                end do
-            case (-1)
+                case (-1)
     		
-                do j = 1, nlats
+                    do j = 1, nlats
     		
-                    ! == >  INVERSE LEGendRE TRANSFORM TO GET VALUES OF THE ZONAL FOURIER
-                    !     TRANSFORM AT LATITUDE j.
+                        ! == >  inverse legendre transform to get values of the zonal fourier
+                        !     transform at latitude j.
     		
-                    ! == >  SUM THE VARIOUS MERIDIONAL MODES TO BUILD THE FOURIER SERIES
-                    !     COEFFICIENT FOR ZONAL WAVENUMBER M=I-1 AT the GIVEN LATITUDE.
+                        ! == >  sum the various meridional modes to build the fourier series
+                        !     coefficient for zonal wavenumber m=i-1 at the given latitude.
     		
-                    nmstrt = 0
-                    do m = 1, mwaves
-                        am(m,j) = cmplx(0.0_wp, 0.0_wp, kind=wp)
-                        do n = 1, mwaves-m+1
-                            nm = nmstrt + n
-                            am(m,j) = am(m,j)  +  anm(nm) * this%pnm(nm,j)
+                        nmstrt = 0
+                        do m = 1, mwaves
+                            am(m,j) = cmplx(0.0_wp, 0.0_wp, kind=wp)
+                            do n = 1, mwaves-m+1
+                                nm = nmstrt + n
+                                am(m,j) = am(m,j)  +  anm(nm) * pnm(nm,j)
+                            end do
+                            nmstrt = nmstrt + mwaves-m+1
                         end do
-                        nmstrt = nmstrt + mwaves-m+1
                     end do
 
-                end do
-
-                ! == >  FOURIER TRANSFORM TO COMPUTE THE VALUES OF THE VARIABLE IN GRID
-                !     SPACE at THE J-TH LATITUDE.
+                    ! == >  Fourier transform to compute the values of the variable in grid
+                    !     space at the j-th latitude.
     		
-                call perform_multiple_real_fft(this, ugrid, am, -1)
-            case default
-                print *, 'error in spharm: idir must be -1 or +1!'
-                print *, 'execution terminated in subroutine spharm'
-        end select
+                    call perform_multiple_real_fft(this, ugrid, am, -1)
+                case default
+                    error stop 'Calling argument idir must be -1 or +1!'
+            end select
+        end associate
 
-    end subroutine spharm
+        ! Free memory
+        deallocate( am )
 
-    subroutine getuv(this,vrtnm,divnm,ug,vg)
+    end subroutine perform_spherical_harmonic_transform
+    !
+    !*****************************************************************************************
+    !
+    subroutine get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
 
         ! compute U,V (winds times cos(lat)) from vrtnm,divnm
         ! (spectral coeffs of vorticity and divergence).
@@ -629,9 +642,9 @@ contains
         call perform_multiple_real_fft(this, ug, um, -1)
         call perform_multiple_real_fft(this, vg, vm, -1)
 
-    end subroutine getuv
+    end subroutine get_velocities_from_vorticity_and_divergence
 
-    subroutine getvrtdiv(this,vrtnm,divnm,ug,vg)
+    subroutine get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
 
         ! compute vrtnm,divnm (spectral coeffs of vorticity and
         ! divergence) from U,V (winds time cos(lat)).
@@ -653,12 +666,12 @@ contains
         call perform_multiple_real_fft(this, ug, um, 1)
         call perform_multiple_real_fft(this, vg, vm, 1)
 
-        call sumnm(this,um,vm,divnm,1,1)
-        call sumnm(this,vm,um,vrtnm,1,-1)
+        call get_complex_spherical_harmonic_coefficients(this,um,vm,divnm,1,1)
+        call get_complex_spherical_harmonic_coefficients(this,vm,um,vrtnm,1,-1)
 
-    end subroutine getvrtdiv
+    end subroutine get_vorticity_and_divergence_from_velocities
 
-    subroutine sumnm(this,am,bm,anm,isign1,isign2)
+    subroutine get_complex_spherical_harmonic_coefficients(this,am,bm,anm,isign1,isign2)
         !
         !  given the arrays of fourier coeffs, am and bm,
         !  compute the complex spherical harmonic coeffs of:
@@ -729,7 +742,7 @@ contains
             end do
         end do
 
-    end subroutine sumnm
+    end subroutine get_complex_spherical_harmonic_coefficients
 
     subroutine cosgrad(this,divnm,ug,vg)
 
@@ -807,14 +820,14 @@ contains
 
         nmdim = (this%ntrunc+1)*(this%ntrunc+2)/2
 
-        call spharm(this, datagrid, dataspec, 1)
+        call perform_spherical_harmonic_transform(this, datagrid, dataspec, 1)
 
         do nm=1,nmdim
             n = this%indxn(nm)
             dataspec(nm) = dataspec(nm)*smooth(n+1)
         end do
 
-        call spharm(this, datagrid, dataspec, -1)
+        call perform_spherical_harmonic_transform(this, datagrid, dataspec, -1)
 
     end subroutine specsmooth
 

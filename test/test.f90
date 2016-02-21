@@ -277,8 +277,8 @@ program test_spharmt
 
     !  compute spectral coeffs of initial vrt,div,p.
 
-    call getvrtdiv(this,vrtnm,divnm,ug,vg)
-    call spharm(this,p,pnm,1)
+    call get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
+    call perform_spherical_harmonic_transform(this,p,pnm,1)
 
 
     !==> time step loop.
@@ -293,17 +293,17 @@ program test_spharmt
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
-        call spharm(this,pg,pnm,-1)
-        call spharm(this,vrtg,vrtnm,-1)
+        call perform_spherical_harmonic_transform(this,pg,pnm,-1)
+        call perform_spherical_harmonic_transform(this,vrtg,vrtnm,-1)
 
         !==> compute u and v on grid from spectral coeffs. of vort and div.
 
-        call getuv(this,vrtnm,divnm,ug,vg)
+        call get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
 
         !==> compute error statistics.
 
         if (mod(ncycle,mprint) == 0) then
-            call spharm(this,divg,divnm,-1)
+            call perform_spherical_harmonic_transform(this,divg,divnm,-1)
             u = ug/coslat
             v = vg/coslat
             p = pg
@@ -355,13 +355,13 @@ program test_spharmt
         scrg2(:,:) = vg(:,:)*(vrtg(:,:)+f(:,:))
         call perform_multiple_real_fft(this, scrg1, scrm1, 1)
         call perform_multiple_real_fft(this, scrg2, scrm2, 1)
-        call sumnm(this,scrm1,scrm2,dvrtdtnm(:,nnew),-1,1)
-        call sumnm(this,scrm2,scrm1,ddivdtnm(:,nnew),1,-1)
+        call get_complex_spherical_harmonic_coefficients(this,scrm1,scrm2,dvrtdtnm(:,nnew),-1,1)
+        call get_complex_spherical_harmonic_coefficients(this,scrm2,scrm1,ddivdtnm(:,nnew),1,-1)
         scrg1(:,:) = ug(:,:)*(pg(:,:)+pzero)
         scrg2(:,:) = vg(:,:)*(pg(:,:)+pzero)
-        call sumnm(this,scrm1,scrm2,dpdtnm(:,nnew),-1,1)
+        call get_complex_spherical_harmonic_coefficients(this,scrm1,scrm2,dpdtnm(:,nnew),-1,1)
         scrg1(:,:)=pg(:,:)+0.5*((ug(:,:)**2+vg(:,:)**2)/coslat(:,:)**2)
-        call spharm(this,scrg1,scrnm,1)
+        call perform_spherical_harmonic_transform(this,scrg1,scrnm,1)
         ddivdtnm(:,nnew)=ddivdtnm(:,nnew)-this%lap(:)*scrnm(:)
 
         !==> update vrt and div with third-order adams-bashforth.
