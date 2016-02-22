@@ -77,12 +77,10 @@ program test
     integer (ip), parameter :: NLON=128
     integer (ip), parameter :: NLAT=NLON/2
     integer (ip), parameter :: NTRUNC=42
+    integer (ip), parameter :: NL = 90
     integer (ip), parameter :: NMDIM = (NTRUNC+1)*(NTRUNC+2)/2
     integer (ip)            ::  MAXIMUM_NUMBER_OF_TIME_ITERATIONS
     integer (ip)            :: MPRINT
-    integer (ip)            :: nl
-    integer (ip)            :: nlm1
-    integer (ip)            :: nlm2
     integer (ip)            :: i, j !! Counters
     integer (ip)            :: cycle_number
     integer (ip)            :: nsav1
@@ -114,9 +112,9 @@ program test
     complex (wp), dimension(NMDIM,3) ::dpdtnm
     complex (wp), dimension(NTRUNC+1,NLAT) :: scrm1
     complex (wp), dimension(NTRUNC+1,NLAT) ::scrm2
-    real (wp)::lhat
-    real (wp)::phlt(361)
-    real (wp)::uhat
+    real (wp)            :: lhat
+    real (wp)            :: phlt(361)
+    real (wp)            :: uhat
     real (wp), parameter :: RADIUS_OF_EARTH_IN_METERS = 6.37122e+6_wp
     real (wp), parameter :: PI = acos( -1.0_wp )
     real (wp), parameter :: HALF_PI = 0.5_wp * PI
@@ -124,17 +122,16 @@ program test
     real (wp), parameter :: ROTATION_RATE_OF_EARTH = 7.292e-5_wp
     real (wp), parameter :: DT = 300.0_wp
     real (wp), parameter :: TILT_ANGLE = 60.0_wp
+    real (wp), parameter :: LONGITUDINAL_MESH = (2.0_wp * PI)/NLON
     real (wp)::uzero
     real (wp)::pzero
     real (wp)::alpha
     real (wp)::fzero
-    real (wp)::cfn
     real (wp)::LATITUDINAL_MESH
     real (wp)::sint
     real (wp)::cost
     real (wp)::cos_a
     real (wp)::sin_a
-    real (wp)::LONGITUDINAL_MESH
     real (wp)::cos_t
     real (wp)::sin_t
     real (wp)::cthclh
@@ -154,8 +151,9 @@ program test
     real (wp)::v2max
     real (wp)::p2max
     real (wp)::vmax
-    real (wp)::pmax
-    type (GaussianSphericalHarmonic):: this
+    real (wp)                       :: pmax
+    character (len=:), allocatable  :: write_format
+    type (GaussianSphericalHarmonic):: sphere
 
     write( stdout, '(A)') 'Test program for GaussianSphericalHarmonic'
     write( stdout, '(A)') ' '
@@ -176,18 +174,15 @@ program test
     !     compute the derivative of the unrotated geopotential
     !     p as a function of latitude
 
-    nl = 91
-    nlm1 = nl-1
-    nlm2 = nl-2
-    cfn = 1.0_wp/nlm1
-    LATITUDINAL_MESH = PI/nlm1
-    do i=1,nlm2
+    LATITUDINAL_MESH = PI/(NL-1)
+    do i = 1, NL - 2
         associate( theta => real(i, kind=wp) * LATITUDINAL_MESH )
             uhat = &
                 compute_initial_unrotated_longitudinal_velocity( uzero, HALF_PI - theta )
 
             phlt(i) = &
-                cfn * cos(theta) * uhat * ( uhat/sin(theta) + RADIUS_OF_EARTH_IN_METERS * fzero )
+                cos(theta) * uhat * ( uhat/sin(theta) &
+                + RADIUS_OF_EARTH_IN_METERS * fzero )/(NL - 1)
         end associate
     end do
 
@@ -195,12 +190,12 @@ program test
     !     for the purpose of computing the geopotential by integration
     !     see equation (3.9) in reference [1] above
 
-    call compute_sine_transform(phlt(1:nlm2))
+    call compute_sine_transform(phlt(1:NL-2))
 
     !     compute the cosine coefficients of the unrotated geopotential
     !     by the formal integration of the sine series representation
 
-    do i=1,nlm2
+    do i = 1, NL - 2
         phlt(i) = -phlt(i)/i
     end do
 
@@ -214,11 +209,11 @@ program test
     !
     cos_a = cos(alpha)
     sin_a = sin(alpha)
-    LONGITUDINAL_MESH = (2.0_wp * PI)/NLON
+
 
     !  initialize sphere derived data type.
 
-    call this%create( &
+    call sphere%create( &
         NLON, NLAT, NTRUNC, RADIUS_OF_EARTH_IN_METERS)
 
     do j=1,NLON
@@ -226,7 +221,7 @@ program test
             cos_l = cos(lambda)
             sin_l = sin(lambda)
         end associate
-        associate( gaulats => this%gaussian_latitudes )
+        associate( gaulats => sphere%gaussian_latitudes )
             do i = 1, NLAT
 
                 !     lambda is longitude, theta is colatitude, and pi/2-theta is
@@ -260,8 +255,8 @@ program test
     pmax = 0.0_wp
     v2max = 0.0_wp
     p2max = 0.0_wp
-    do j=1,NLAT
-        do i=1,NLON
+    do j = 1, NLAT
+        do i = 1, NLON
             v2max = v2max + uxact(i,j)**2 + vxact(i,j)**2
             p2max = p2max + pxact(i,j)**2
             vmax = max(abs(uxact(i,j)),abs(vxact(i,j)),vmax)
@@ -280,8 +275,8 @@ program test
 
     !  compute spectral coeffs of initial vrt,div,p.
 
-    call this%get_vorticity_and_divergence_from_velocities( vrtnm,divnm,ug,vg)
-    call this%perform_spherical_harmonic_transform( p,pnm,1)
+    call sphere%get_vorticity_and_divergence_from_velocities( vrtnm,divnm,ug,vg)
+    call sphere%perform_spherical_harmonic_transform( p,pnm,1)
 
 
     !==> time step loop.
@@ -296,40 +291,44 @@ program test
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
-        call this%perform_spherical_harmonic_transform( pg,pnm,-1)
-        call this%perform_spherical_harmonic_transform( vrtg,vrtnm,-1)
+        call sphere%perform_spherical_harmonic_transform( pg,pnm,-1)
+        call sphere%perform_spherical_harmonic_transform( vrtg,vrtnm,-1)
 
         !==> compute u and v on grid from spectral coeffs. of vort and div.
 
-        call this%get_velocities_from_vorticity_and_divergence( vrtnm,divnm,ug,vg)
+        call sphere%get_velocities_from_vorticity_and_divergence( vrtnm,divnm,ug,vg)
 
         !==> compute error statistics.
 
         if (mod(cycle_number, MPRINT ) == 0) then
 
-            call this%perform_spherical_harmonic_transform( divg,divnm,-1)
+            call sphere%perform_spherical_harmonic_transform( divg,divnm,-1)
 
             u = ug/coslat
             v = vg/coslat
             p = pg
             model_time_in_hours = time/3600.0_wp
 
-            write( stdout, 390 ) &
-                cycle_number, model_time_in_hours, &
-                DT, NLAT, NLON, NTRUNC, &
-                ROTATION_RATE_OF_EARTH, pzero, uzero, TILT_ANGLE
+            allocate( &
+                write_format, &
+                source = '(A,i10,A,f10.2/,A,f10.0,A,i10/,A,i10,'&
+                //'A,i10/,A,1pe15.6,A,1pe15.6,/A,1pe15.6,A,1pe15.6)' &
+                )
+            write( stdout, '(A)' ) ' '
+            write( stdout, '(A)' ) ' steady nonlinear rotated flow:'
+            write( stdout, fmt = write_format ) &
+                ' cycle number              ', cycle_number, &
+                ' model time in  hours      ', model_time_in_hours, &
+                ' time step in seconds      ', DT, &
+                ' number of latitudes       ', NLAT,    &
+                ' number of longitudes      ', NLON,    &
+                ' max wave number           ', NTRUNC,    &
+                ' rotation rate        ', ROTATION_RATE_OF_EARTH,   &
+                ' mean height          ',pzero,     &
+                ' maximum velocity     ',uzero,      &
+                ' tilt angle           ',TILT_ANGLE
 
-390         format(//' steady nonlinear rotated flow:',/    &
-                ' cycle number              ',i10,     &
-                ' model time in  hours      ',f10.2,/  &
-                ' time step in seconds      ',f10.0,   &
-                ' number of latitudes       ',i10,/    &
-                ' number of longitudes      ',i10,     &
-                ' max wave number           ',i10,/    &
-                ' rotation rate        ',1pe15.6,      &
-                ' mean height          ',1pe15.6,/     &
-                ' maximum velocity     ',1pe15.6,      &
-                ' tilt angle           ',1pe15.6)
+            deallocate( write_format )
 
             dvgm = 0.0_wp
             dvmax = 0.0_wp
@@ -357,13 +356,20 @@ program test
             evmax = evmax/vmax
             epmax = epmax/pmax
 
-            write( stdout, 391 ) evmax,epmax,dvmax,dpmax,dvgm
-391         format( &
-                ' max error in velocity',1pe15.6,&
-                ' max error in geopot. ',1pe15.6,/&
-                ' l2 error in velocity ',1pe15.6,&
-                ' l2 error in geopot.  ',1pe15.6,/&
-                ' maximum divergence   ',1pe15.6)
+            allocate( &
+                write_format, &
+                source = '(2(A,1pe15.6)/,A,1pe15.6)' &
+                )
+
+            write( stdout, fmt = write_format ) &
+                ' max error in velocity', evmax, &
+                ' max error in geopot. ', epmax, &
+                ' l2 error in velocity ', dvmax,&
+                ' l2 error in geopot.  ', dpmax, &
+                ' maximum divergence   ', dvgm
+
+            deallocate( write_format )
+
         end if
 
         !==> COMPUTE RIGHT-HAND SIDES OF PROGNOSTIC EQNS.
@@ -371,23 +377,23 @@ program test
         scrg1 = ug * ( vrtg + f )
         scrg2 = vg * ( vrtg + f )
 
-        call this%perform_multiple_real_fft( scrg1, scrm1, 1)
-        call this%perform_multiple_real_fft( scrg2, scrm2, 1)
+        call sphere%perform_multiple_real_fft( scrg1, scrm1, 1)
+        call sphere%perform_multiple_real_fft( scrg2, scrm2, 1)
 
-        call this%get_complex_spherical_harmonic_coefficients(scrm1,scrm2,dvrtdtnm(:,n_new),-1,1)
-        call this%get_complex_spherical_harmonic_coefficients(scrm2,scrm1,ddivdtnm(:,n_new),1,-1)
+        call sphere%get_complex_spherical_harmonic_coefficients(scrm1,scrm2,dvrtdtnm(:,n_new),-1,1)
+        call sphere%get_complex_spherical_harmonic_coefficients(scrm2,scrm1,ddivdtnm(:,n_new),1,-1)
 
         scrg1 = ug * ( pg + pzero )
         scrg2 = vg * ( pg + pzero )
 
-        call this%get_complex_spherical_harmonic_coefficients( &
+        call sphere%get_complex_spherical_harmonic_coefficients( &
             scrm1, scrm2, dpdtnm(:,n_new), -1, 1)
 
         scrg1 = pg + 0.5_wp * ( ( ug**2 + vg**2 ) / coslat**2 )
 
-        call this%perform_spherical_harmonic_transform( scrg1, scrnm, 1)
+        call sphere%perform_spherical_harmonic_transform( scrg1, scrnm, 1)
 
-        associate( lap => this%laplacian )
+        associate( lap => sphere%laplacian )
             ddivdtnm(:,n_new) = ddivdtnm(:,n_new) - lap * scrnm
         end associate
 
@@ -441,7 +447,7 @@ program test
 
     !==> deallocate arrays in object.
 
-    call this%destroy()
+    call sphere%destroy()
 
 contains
     !
