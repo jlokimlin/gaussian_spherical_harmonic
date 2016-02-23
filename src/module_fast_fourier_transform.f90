@@ -18,7 +18,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine vpassm (a,b,c,d,trigs,inc1,inc2,inc3,inc4,lot,n,ifac,la)
+    subroutine vpassm (a, b, c, d, trigs, inc1, inc2, inc3, inc4, lot, n, ifac, la)
         !
         !
         !     Purpose:
@@ -119,10 +119,10 @@ contains
                 ja=1
                 ib=ia+iink
                 jb=ja+jink
-                do l=1,la
+                do l=1, la
                     i=ibase
                     j=jbase
-                    do ijk=1,lot
+                    do ijk=1, lot
                         c(ja+j)=a(ia+i)+a(ib+i)
                         d(ja+j)=b(ia+i)+b(ib+i)
                         c(jb+j)=a(ia+i)-a(ib+i)
@@ -138,14 +138,14 @@ contains
                 if (la == m) return
                 la1=la+1
                 jbase=jbase+jump
-                do k=la1,m,la
+                do k=la1, m, la
                     kb=k+k-2
                     c1=trigs(kb+1)
                     s1=trigs(kb+2)
-                    do l=1,la
+                    do l=1, la
                         i=ibase
                         j=jbase
-                        do ijk=1,lot
+                        do ijk=1, lot
                             c(ja+j)=a(ia+i)+a(ib+i)
                             d(ja+j)=b(ia+i)+b(ib+i)
                             c(jb+j)=c1*(a(ia+i)-a(ib+i))-s1*(b(ia+i)-b(ib+i))
@@ -172,10 +172,10 @@ contains
                 jb=ja+jink
                 ic=ib+iink
                 jc=jb+jink
-                do l=1,la
+                do l=1, la
                     i=ibase
                     j=jbase
-                    do ijk=1,lot
+                    do ijk=1, lot
                         c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                         d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                         c(jb+j)=(a(ia+i)-0.5_wp*(a(ib+i)+a(ic+i)))-(SIN_60*(b(ib+i)-b(ic+i)))
@@ -191,17 +191,17 @@ contains
                 if (la == m) return
                 la1=la+1
                 jbase=jbase+jump
-                do k=la1,m,la
+                do k=la1, m, la
                     kb=k+k-2
                     kc=kb+kb
                     c1=trigs(kb+1)
                     s1=trigs(kb+2)
                     c2=trigs(kc+1)
                     s2=trigs(kc+2)
-                    do l=1,la
+                    do l=1, la
                         i=ibase
                         j=jbase
-                        do ijk=1,lot
+                        do ijk=1, lot
                             c(ja+j)=a(ia+i)+(a(ib+i)+a(ic+i))
                             d(ja+j)=b(ia+i)+(b(ib+i)+b(ic+i))
                             c(jb+j)=                                                           &
@@ -237,10 +237,10 @@ contains
                 jc=jb+jink
                 id=ic+iink
                 jd=jc+jink
-                do l=1,la
+                do l=1, la
                     i=ibase
                     j=jbase
-                    do ijk=1,lot
+                    do ijk=1, lot
                         c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
                         c(jc+j)=(a(ia+i)+a(ic+i))-(a(ib+i)+a(id+i))
                         d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
@@ -258,7 +258,7 @@ contains
                 if (la == m) return
                 la1=la+1
                 jbase=jbase+jump
-                do k=la1,m,la
+                do k=la1, m, la
                     kb=k+k-2
                     kc=kb+kb
                     kd=kc+kb
@@ -268,10 +268,10 @@ contains
                     s2=trigs(kc+2)
                     c3=trigs(kd+1)
                     s3=trigs(kd+2)
-                    do l=1,la
+                    do l=1, la
                         i=ibase
                         j=jbase
-                        do ijk=1,lot
+                        do ijk=1, lot
                             c(ja+j)=(a(ia+i)+a(ic+i))+(a(ib+i)+a(id+i))
                             d(ja+j)=(b(ia+i)+b(ic+i))+(b(ib+i)+b(id+i))
                             c(jc+j)=                                     &
@@ -315,10 +315,10 @@ contains
                 jd=jc+jink
                 ie=id+iink
                 je=jd+jink
-                do l=1,la
+                do l=1, la
                     i=ibase
                     j=jbase
-                    do ijk=1,lot
+                    do ijk=1, lot
                         c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                         d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
                         c(jb+j)=(a(ia+i)+COS_72*(a(ib+i)+a(ie+i))-COS_36*(a(ic+i)+a(id+i))) &
@@ -346,7 +346,7 @@ contains
                 if (la == m) return
                 la1=la+1
                 jbase=jbase+jump
-                do k=la1,m,la
+                do k=la1, m, la
                     kb=k+k-2
                     kc=kb+kb
                     kd=kc+kb
@@ -359,10 +359,10 @@ contains
                     s3=trigs(kd+2)
                     c4=trigs(ke+1)
                     s4=trigs(ke+2)
-                    do l=1,la
+                    do l=1, la
                         i=ibase
                         j=jbase
-                        do ijk=1,lot
+                        do ijk=1, lot
                             c(ja+j)=a(ia+i)+(a(ib+i)+a(ie+i))+(a(ic+i)+a(id+i))
                             d(ja+j)=b(ia+i)+(b(ib+i)+b(ie+i))+(b(ic+i)+b(id+i))
                             c(jb+j)=                                                          &
@@ -420,7 +420,7 @@ contains
       !
       !*****************************************************************************************
       !
-    subroutine perform_preprocessing_step_for_fft99 (a,work,trigs,inc,jump,n,lot)
+    subroutine perform_preprocessing_step_for_fft99 (a, work, trigs, inc, jump, n, lot)
         integer (ip), intent(in)    :: inc
         integer (ip), intent(in)    ::jump
         integer (ip), intent(in)    ::n
@@ -429,7 +429,7 @@ contains
         real (wp),    intent(in out) :: a(*)
         real (wp),    intent(in out) ::work(*)
 
-        !     dimension a(n),work(n),trigs(n)
+        !     dimension a(n), work(n), trigs(n)
         !
         !     subroutine fft99a - preprocessing step for fft99, isign=+1
         !     (spectral to gridpoint transform)
@@ -459,7 +459,7 @@ contains
         ib=n*inc+1
         ja=1
         jb=2
-        do l=1,lot
+        do l=1, lot
             work(ja)=a(ia)+a(ib)
             work(jb)=a(ia)-a(ib)
             ia=ia+jump
@@ -474,14 +474,14 @@ contains
         jabase=3
         jbbase=n-1
 
-        do k=3,nh,2
+        do k=3, nh, 2
             ia=iabase
             ib=ibbase
             ja=jabase
             jb=jbbase
             c=trigs(n+k)
             s=trigs(n+k+1)
-            do l=1,lot
+            do l=1, lot
                 work(ja)=(a(ia)+a(ib))- &
                     (s*(a(ia)-a(ib))+c*(a(ia+inc)+a(ib+inc)))
                 work(jb)=(a(ia)+a(ib))+ &
@@ -505,7 +505,7 @@ contains
         if (iabase == ibbase) then
             ia=iabase
             ja=jabase
-            do l=1,lot
+            do l=1, lot
                 work(ja)=2.0_wp*a(ia)
                 work(ja+1)=-2.0_wp*a(ia+inc)
                 ia=ia+jump
@@ -517,7 +517,7 @@ contains
         !
         !*****************************************************************************************
         !
-    subroutine perform_postprocessing_step_for_fft99(work,a,trigs,inc,jump,n,lot)
+    subroutine perform_postprocessing_step_for_fft99(work, a, trigs, inc, jump, n, lot)
         integer (ip), intent(in)    :: inc
         integer (ip), intent(in)    ::jump
         integer (ip), intent(in)    ::n
@@ -526,7 +526,7 @@ contains
         real (wp),    intent(in out) :: a(*)
         real (wp),    intent(in out) ::work(*)
 
-        !     dimension work(n),a(n),trigs(n)
+        !     dimension work(n), a(n), trigs(n)
         !
         !     subroutine fft99b - postprocessing step for fft99, isign=-1
         !     (gridpoint to spectral transform)
@@ -558,7 +558,7 @@ contains
         ib=2
         ja=1
         jb=n*inc+1
-        do l=1,lot
+        do l=1, lot
             a(ja)=scale_constant*(work(ia)+work(ib))
             a(jb)=scale_constant*(work(ia)-work(ib))
             a(ja+inc)=0.0_wp
@@ -576,14 +576,14 @@ contains
         jabase=2*inc+1
         jbbase=(n-2)*inc+1
 
-        do k=3,nh,2
+        do k=3, nh, 2
             ia=iabase
             ib=ibbase
             ja=jabase
             jb=jbbase
             c=trigs(n+k)
             s=trigs(n+k+1)
-            do l=1,lot
+            do l=1, lot
                 a(ja)=scale_constant*((work(ia)+work(ib)) &
                     +(c*(work(ia+1)+work(ib+1))+s*(work(ia)-work(ib))))
                 a(jb)=scale_constant*((work(ia)+work(ib)) &
@@ -608,7 +608,7 @@ contains
             ia=iabase
             ja=jabase
             scale_constant=2.0_wp*scale_constant
-            do l=1,lot
+            do l=1, lot
                 a(ja)=scale_constant*work(ia)
                 a(ja+inc)=-scale_constant*work(ia+1)
                 ia=ia+nx
@@ -625,7 +625,7 @@ contains
         integer (ip), intent(out) :: ifax(:)
         real (wp),    intent(out) :: trigs(:)
 
-        !     dimension ifax(13),trigs(1)
+        !     dimension ifax(13), trigs(1)
         !
         ! mode 3 is used for real/half-complex transforms.  it is possible
         ! to do complex/complex transforms with other values of mode, but
@@ -647,7 +647,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine fftrig (trigs,n,mode)
+    subroutine fftrig (trigs, n, mode)
         real (wp),    intent(out) :: trigs(:)
         integer (ip), intent(in)  :: n
         integer (ip), intent(in)  :: mode
@@ -667,7 +667,7 @@ contains
         if (imode>1.and.imode<6) nn=n/2
         del=(2.0_wp * PI)/real(nn, kind=wp)
         l=nn+nn
-        do i=1,l,2
+        do i=1, l, 2
             angle=0.5_wp*real(i-1, kind=wp)*del
             trigs(i)=cos(angle)
             trigs(i+1)=sin(angle)
@@ -679,8 +679,8 @@ contains
         nh=(nn+1)/2
         l=nh+nh
         la=nn+nn
-        do i=1,l,2
-            angle=0.5_wp*real(i-1,kind=wp)*del
+        do i=1, l, 2
+            angle=0.5_wp*real(i-1, kind=wp)*del
             trigs(la+i)=cos(angle)
             trigs(la+i+1)=sin(angle)
         end do
@@ -689,16 +689,16 @@ contains
         del=0.5_wp*del
         la=la+nn
         if (mode/=5) then
-            do i=2,nn
-                angle=real(i-1,kind=wp)*del
+            do i=2, nn
+                angle=real(i-1, kind=wp)*del
                 trigs(la+i)=2.0_wp*sin(angle)
             end do
             return
         end if
 
         del=0.5_wp*del
-        do i=2,n
-            angle=real(i-1,kind=wp)*del
+        do i=2, n
+            angle=real(i-1, kind=wp)*del
             trigs(la+i)=sin(angle)
         end do
 
@@ -706,7 +706,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine fax (ifax,n,mode)
+    subroutine fax (ifax, n, mode)
         integer (ip), intent(out) :: ifax(:)
         integer (ip), intent(in)  :: n
         integer (ip), intent(in)  :: mode
@@ -730,20 +730,20 @@ contains
         return
 10      k=1
         !     test for factors of 4
-20      if (mod(nn,4)/=0) goto 30
+20      if (mod(nn, 4)/=0) goto 30
         k=k+1
         ifax(k)=4
         nn=nn/4
         if (nn == 1) goto 80
         goto 20
            !     test for extra factor of 2
-30      if (mod(nn,2)/=0) goto 40
+30      if (mod(nn, 2)/=0) goto 40
         k=k+1
         ifax(k)=2
         nn=nn/2
         if (nn == 1) goto 80
         !     test for factors of 3
-40      if (mod(nn,3)/=0) goto 50
+40      if (mod(nn, 3)/=0) goto 50
         k=k+1
         ifax(k)=3
         nn=nn/3
@@ -753,7 +753,7 @@ contains
 50      l=5
         inc=2
         !     inc alternately takes on values 2 and 4
-60      if (mod(nn,l)/=0) goto 70
+60      if (mod(nn, l)/=0) goto 70
         k=k+1
         ifax(k)=l
         nn=nn/l
@@ -767,9 +767,9 @@ contains
         nfax=ifax(1)
         !     sort factors into ascending order
         if (nfax == 1) goto 100
-        do ii=2,nfax
+        do ii=2, nfax
             istop=nfax+2-ii
-            do i=2,istop
+            do i=2, istop
                 if (ifax(i+1)>=ifax(i)) goto 90
                 item=ifax(i)
                 ifax(i)=ifax(i+1)
@@ -783,7 +783,7 @@ end subroutine fax
 !
 !*****************************************************************************************
 !
-subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
+subroutine perform_fft991(a, work, trigs, ifax, inc, jump, n, lot, isign)
     !
     !--------------------------------------------------------------------------------
     ! Dictionary: calling arguments
@@ -798,7 +798,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     integer (ip), intent(in)     :: lot
     integer (ip), intent(in)     :: isign
 
-    !     dimension a(n),work(n),trigs(n),ifax(1)
+    !     dimension a(n), work(n), trigs(n), ifax(1)
     !
     !     subroutine "fft991" - multiple real/half-complex periodic
     !     fast fourier transform
@@ -823,11 +823,11 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !           = -1 for transform from gridpoint to spectral
     !
     !     ordering of coefficients:
-    !         a(0),b(0),a(1),b(1),a(2),b(2),...,a(n/2),b(n/2)
+    !         a(0), b(0), a(1), b(1), a(2), b(2), ..., a(n/2), b(n/2)
     !         where b(0)=b(n/2)=0; (n+2) locations required
     !
     !     ordering of data:
-    !         x(0),x(1),x(2),...,x(n-1)
+    !         x(0), x(1), x(2), ..., x(n-1)
     !
     !     vectorization is achieved on cray by doing the transforms in
     !     parallel
@@ -837,11 +837,11 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
     !     definition of transforms:
     !     -------------------------
     !
-    !     isign=+1: x(j)=sum(k=0,...,n-1)(c(k)*exp(2*i*j*k*pi/n))
+    !     isign=+1: x(j)=sum(k=0, ..., n-1)(c(k)*exp(2*i*j*k*pi/n))
     !         where c(k)=a(k)+i*b(k) and c(n-k)=a(k)-i*b(k)
     !
-    !     isign=-1: a(k)=(1/n)*sum(j=0,...,n-1)(x(j)*cos(2*j*k*pi/n))
-    !               b(k)=-(1/n)*sum(j=0,...,n-1)(x(j)*sin(2*j*k*pi/n))
+    !     isign=-1: a(k)=(1/n)*sum(j=0, ..., n-1)(x(j)*cos(2*j*k*pi/n))
+    !               b(k)=-(1/n)*sum(j=0, ..., n-1)(x(j)*sin(2*j*k*pi/n))
     !
 
     integer (ip) :: nfax
@@ -869,13 +869,13 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 
     !     if necessary, transfer data to work area
     igo=50
-    if (mod(nfax,2) == 1) goto 40
+    if (mod(nfax, 2) == 1) goto 40
     ibase=1
     jbase=1
-    do l=1,lot
+    do l=1, lot
         i=ibase
         j=jbase
-        do m=1,n
+        do m=1, n
             work(j)=a(i)
             i=i+inc
             j=j+1
@@ -891,7 +891,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 !   ------------------------
 !
 30 continue
-   call perform_preprocessing_step_for_fft99(a,work,trigs,inc,jump,n,lot)
+   call perform_preprocessing_step_for_fft99(a, work, trigs, inc, jump, n, lot)
    igo=60
    !
    !   complex transform
@@ -900,15 +900,15 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 40 continue
    ia=1
    la=1
-   do k=1,nfax
+   do k=1, nfax
        if (igo == 60) goto 60
-       call vpassm (a(ia),a(ia+inc),work(1),work(2),trigs, &
-           ink,2,jump,nx,lot,nh,ifax(k+1),la)
+       call vpassm (a(ia), a(ia+inc), work(1), work(2), trigs, &
+           ink, 2, jump, nx, lot, nh, ifax(k+1), la)
        igo=60
        goto 70
 60 continue
-   call vpassm (work(1),work(2),a(ia),a(ia+inc),trigs, &
-       2,ink,nx,jump,lot,nh,ifax(k+1),la)
+   call vpassm (work(1), work(2), a(ia), a(ia+inc), trigs, &
+       2, ink, nx, jump, lot, nh, ifax(k+1), la)
    igo=50
 70 continue
    la=la*ifax(k+1)
@@ -917,13 +917,13 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
    if (isign == -1) goto 130
 
    ! if necessary, transfer data from work area
-   if (mod(nfax,2)/=1) then
+   if (mod(nfax, 2)/=1) then
        ibase=1
        jbase=1
-       do l=1,lot
+       do l=1, lot
            i=ibase
            j=jbase
-           do m=1,n
+           do m=1, n
                a(j)=work(i)
                i=i+1
                j=j+inc
@@ -935,7 +935,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
 
    !   fill in zeros at end
    ib=n*inc+1
-   do l=1,lot
+   do l=1, lot
        a(ib)=0.0_wp
        a(ib+inc)=0.0_wp
        ib=ib+jump
@@ -946,7 +946,7 @@ subroutine perform_fft991(a,work,trigs,ifax,inc,jump,n,lot,isign)
    !     --------------------------
 
 130 continue
-    call perform_postprocessing_step_for_fft99 (work,a,trigs,inc,jump,n,lot)
+    call perform_postprocessing_step_for_fft99 (work, a, trigs, inc, jump, n, lot)
 
 140 continue
 

@@ -12,7 +12,7 @@
 !     the method is described in the paper:
 !
 ! [1] p. n. swarztrauber, spectral transform methods for solving
-!     the shallow-water equations on the sphere, p.n. swarztrauber,
+!     the shallow-water equations on the sphere, p.n. swarztrauber, 
 !     monthly weather review, vol. 124, no. 4, april 1996, pp. 730-744.
 !
 !     this program implements test case 3 (steady nonlinear rotated flow)
@@ -21,7 +21,7 @@
 ! [2] d.l. williamson, j.b. drake, j.j. hack, r. jakob, and
 !     p.n. swarztrauber, j. comp. phys., a standard test set
 !     for numerical approximations to the shallow-water
-!     equations in spherical geometry, j. comp. phys.,
+!     equations in spherical geometry, j. comp. phys., 
 !     vol. 102, no. 1, sept. 1992, pp. 211-224.
 !
 ! definitions:
@@ -42,24 +42,24 @@
 !     theta         colatitude
 !
 !   the second dimension of the following two dimensional arrays
-!   corresponds to the latitude index with values j=1,...,nlat
+!   corresponds to the latitude index with values j=1, ..., nlat
 !   going from north to south.
-!   the second dimension is longitude with values i=1,...,nlon
+!   the second dimension is longitude with values i=1, ..., nlon
 !   where i=1 corresponds to zero longitude and j=nlon corresponds
 !   to 2pi minus 2pi/nlon.
 !
-!     u(i,j)       east longitudinal velocity component at t=time
-!     v(i,j)       latitudinal velocity component at t=time
-!     p(i,j)       +pzero = geopotential at t=time
+!     u(i, j)       east longitudinal velocity component at t=time
+!     v(i, j)       latitudinal velocity component at t=time
+!     p(i, j)       +pzero = geopotential at t=time
 !
-!     divg(i,j)    divergence (d/dtheta (cos(theta) v)
+!     divg(i, j)    divergence (d/dtheta (cos(theta) v)
 !                                          + du/dlambda)/cos(theta)
-!     vrtg(i,j)    vorticity  (d/dtheta (cos(theta) u)
+!     vrtg(i, j)    vorticity  (d/dtheta (cos(theta) u)
 !                                          - dv/dlambda)/cos(theta)
 !
-!     uxact(i,j)   the "exact" longitudinal velocity component
-!     vxact(i,j)   the "exact" latitudinal  velocity component
-!     pxact(i,j)   the "exact" geopotential
+!     uxact(i, j)   the "exact" longitudinal velocity component
+!     vxact(i, j)   the "exact" latitudinal  velocity component
+!     pxact(i, j)   the "exact" geopotential
 !
 program test
 
@@ -88,30 +88,30 @@ program test
     integer (ip)            :: n_old
     integer (ip)            :: n_now
     integer (ip)            :: n_new
-    real (wp), dimension(NLON,NLAT) :: uxact
-    real (wp), dimension(NLON,NLAT) :: vxact
-    real (wp), dimension(NLON,NLAT) :: pxact
-    real (wp), dimension(NLON,NLAT) :: u
-    real (wp), dimension(NLON,NLAT) :: v
-    real (wp), dimension(NLON,NLAT) :: p
-    real (wp), dimension(NLON,NLAT) :: f
-    real (wp), dimension(NLON,NLAT) :: coslat
-    real (wp), dimension(NLON,NLAT) :: ug
-    real (wp), dimension(NLON,NLAT) :: vg
-    real (wp), dimension(NLON,NLAT) :: pg
-    real (wp), dimension(NLON,NLAT) :: vrtg
-    real (wp), dimension(NLON,NLAT) :: divg
-    real (wp), dimension(NLON,NLAT) :: scrg1
-    real (wp), dimension(NLON,NLAT) :: scrg2
+    real (wp), dimension(NLON, NLAT) :: uxact
+    real (wp), dimension(NLON, NLAT) :: vxact
+    real (wp), dimension(NLON, NLAT) :: pxact
+    real (wp), dimension(NLON, NLAT) :: u
+    real (wp), dimension(NLON, NLAT) :: v
+    real (wp), dimension(NLON, NLAT) :: p
+    real (wp), dimension(NLON, NLAT) :: f
+    real (wp), dimension(NLON, NLAT) :: coslat
+    real (wp), dimension(NLON, NLAT) :: ug
+    real (wp), dimension(NLON, NLAT) :: vg
+    real (wp), dimension(NLON, NLAT) :: pg
+    real (wp), dimension(NLON, NLAT) :: vrtg
+    real (wp), dimension(NLON, NLAT) :: divg
+    real (wp), dimension(NLON, NLAT) :: scrg1
+    real (wp), dimension(NLON, NLAT) :: scrg2
     complex (wp), dimension(NMDIM) :: vrtnm
     complex (wp), dimension(NMDIM) ::divnm
     complex (wp), dimension(NMDIM) ::pnm
     complex (wp), dimension(NMDIM) ::scrnm
-    complex (wp), dimension(NMDIM,3) :: dvrtdtnm
-    complex (wp), dimension(NMDIM,3) ::ddivdtnm
-    complex (wp), dimension(NMDIM,3) ::dpdtnm
-    complex (wp), dimension(NTRUNC+1,NLAT) :: scrm1
-    complex (wp), dimension(NTRUNC+1,NLAT) ::scrm2
+    complex (wp), dimension(NMDIM, 3) :: dvrtdtnm
+    complex (wp), dimension(NMDIM, 3) ::ddivdtnm
+    complex (wp), dimension(NMDIM, 3) ::dpdtnm
+    complex (wp), dimension(NTRUNC+1, NLAT) :: scrm1
+    complex (wp), dimension(NTRUNC+1, NLAT) ::scrm2
     real (wp)            :: lhat
     real (wp)            :: phlt(361)
     real (wp)            :: uhat
@@ -159,8 +159,8 @@ program test
     write( stdout, '(A)') ' '
     write( stdout, '(A)') 'Non-linear steady-state geostropic flow in a shallow water model'
     write( stdout, '(A)') ' '
-    write( stdout, '(A,I11)') 'Triangular trunction number  = ', NTRUNC
-    write( stdout, '(A,I11)') 'Number of gaussian latitudes = ', NLAT
+    write( stdout, '(A, I11)') 'Triangular trunction number  = ', NTRUNC
+    write( stdout, '(A, I11)') 'Number of gaussian latitudes = ', NLAT
     write( stdout, '(A)') ' '
 
 
@@ -216,7 +216,7 @@ program test
     call sphere%create( &
         NLON, NLAT, NTRUNC, RADIUS_OF_EARTH_IN_METERS)
 
-    do j=1,NLON
+    do j=1, NLON
         associate( lambda => real(j - 1, kind=wp) * LONGITUDINAL_MESH )
             cos_l = cos(lambda)
             sin_l = sin(lambda)
@@ -235,17 +235,17 @@ program test
                     sint = cos_a*cos_t+sin_a*sin_t*cos_l
                     cthclh = cos_a*sin_t*cos_l-sin_a*cos_t
                     cthslh = sin_t*sin_l
-                    lhat = atanxy(cthclh,cthslh)
+                    lhat = atanxy(cthclh, cthslh)
                     cos_lh = cos(lhat)
                     sin_lh = sin(lhat)
                     cost = cos_lh*cthclh+sin_lh*cthslh
-                    that = atanxy(sint,cost)
-                    uhat = compute_initial_unrotated_longitudinal_velocity(uzero,HALF_PI-that)
-                    pxact(j,i) = compute_cosine_transform(that,phlt)
-                    uxact(j,i) = uhat*(cos_a*sin_l*sin_lh+cos_l*cos_lh)
-                    vxact(j,i) = uhat*(cos_a*cos_l*sin_lh*cos_t-cos_lh*sin_l*cos_t+sin_a*sin_lh*sin_t)
-                    f(j,i) = fzero * sint
-                    coslat(j,i) = sqrt(1.0_wp - gaulats(i)**2)
+                    that = atanxy(sint, cost)
+                    uhat = compute_initial_unrotated_longitudinal_velocity(uzero, HALF_PI-that)
+                    pxact(j, i) = compute_cosine_transform(that, phlt)
+                    uxact(j, i) = uhat*(cos_a*sin_l*sin_lh+cos_l*cos_lh)
+                    vxact(j, i) = uhat*(cos_a*cos_l*sin_lh*cos_t-cos_lh*sin_l*cos_t+sin_a*sin_lh*sin_t)
+                    f(j, i) = fzero * sint
+                    coslat(j, i) = sqrt(1.0_wp - gaulats(i)**2)
                 end associate
             end do
         end associate
@@ -257,10 +257,10 @@ program test
     p2max = 0.0_wp
     do j = 1, NLAT
         do i = 1, NLON
-            v2max = v2max + uxact(i,j)**2 + vxact(i,j)**2
-            p2max = p2max + pxact(i,j)**2
-            vmax = max(abs(uxact(i,j)),abs(vxact(i,j)),vmax)
-            pmax = max(abs(pxact(i,j)),pmax)
+            v2max = v2max + uxact(i, j)**2 + vxact(i, j)**2
+            p2max = p2max + pxact(i, j)**2
+            vmax = max(abs(uxact(i, j)), abs(vxact(i, j)), vmax)
+            pmax = max(abs(pxact(i, j)), pmax)
         end do
     end do
     !
@@ -273,10 +273,10 @@ program test
     vg = v*coslat
     pg = p
 
-    !  compute spectral coeffs of initial vrt,div,p.
+    !  compute spectral coeffs of initial vrt, div, p.
 
-    call sphere%get_vorticity_and_divergence_from_velocities( vrtnm,divnm,ug,vg)
-    call sphere%perform_spherical_harmonic_transform( p,pnm,1)
+    call sphere%get_vorticity_and_divergence_from_velocities( vrtnm, divnm, ug, vg)
+    call sphere%perform_spherical_harmonic_transform( p, pnm, 1)
 
 
     !==> time step loop.
@@ -291,18 +291,18 @@ program test
 
         !==> INVERSE TRANSFORM TO GET VORT AND PHIG ON GRID.
 
-        call sphere%perform_spherical_harmonic_transform( pg,pnm,-1)
-        call sphere%perform_spherical_harmonic_transform( vrtg,vrtnm,-1)
+        call sphere%perform_spherical_harmonic_transform( pg, pnm, -1)
+        call sphere%perform_spherical_harmonic_transform( vrtg, vrtnm, -1)
 
         !==> compute u and v on grid from spectral coeffs. of vort and div.
 
-        call sphere%get_velocities_from_vorticity_and_divergence( vrtnm,divnm,ug,vg)
+        call sphere%get_velocities_from_vorticity_and_divergence( vrtnm, divnm, ug, vg)
 
         !==> compute error statistics.
 
         if (mod(cycle_number, MPRINT ) == 0) then
 
-            call sphere%perform_spherical_harmonic_transform( divg,divnm,-1)
+            call sphere%perform_spherical_harmonic_transform( divg, divnm, -1)
 
             u = ug/coslat
             v = vg/coslat
@@ -311,8 +311,8 @@ program test
 
             allocate( &
                 write_format, &
-                source = '(A,i10,A,f10.2/,A,f10.0,A,i10/,A,i10,'&
-                //'A,i10/,A,1pe15.6,A,1pe15.6,/A,1pe15.6,A,1pe15.6)' &
+                source = '(A, i10, A, f10.2/, A, f10.0, A, i10/, A, i10, '&
+                //'A, i10/, A, 1pe15.6, A, 1pe15.6, /A, 1pe15.6, A, 1pe15.6)' &
                 )
             write( stdout, '(A)' ) ' '
             write( stdout, '(A)' ) ' steady nonlinear rotated flow:'
@@ -324,9 +324,9 @@ program test
                 ' number of longitudes      ', NLON,    &
                 ' max wave number           ', NTRUNC,    &
                 ' rotation rate        ', ROTATION_RATE_OF_EARTH,   &
-                ' mean height          ',pzero,     &
-                ' maximum velocity     ',uzero,      &
-                ' tilt angle           ',TILT_ANGLE
+                ' mean height          ', pzero,     &
+                ' maximum velocity     ', uzero,      &
+                ' tilt angle           ', TILT_ANGLE
 
             deallocate( write_format )
 
@@ -336,18 +336,18 @@ program test
             evmax = 0.0_wp
             epmax = 0.0_wp
 
-            do j=1,NLAT
-                do i=1,NLON
+            do j=1, NLAT
+                do i=1, NLON
                     dvgm = &
-                        max(dvgm,abs(divg(i,j)))
+                        max(dvgm, abs(divg(i, j)))
                     dvmax = &
-                        dvmax+(u(i,j)-uxact(i,j))**2+(v(i,j)-vxact(i,j))**2
+                        dvmax+(u(i, j)-uxact(i, j))**2+(v(i, j)-vxact(i, j))**2
                     dpmax = &
-                        dpmax+(p(i,j)-pxact(i,j))**2
+                        dpmax+(p(i, j)-pxact(i, j))**2
                     evmax = &
-                        max(evmax,abs(v(i,j)-vxact(i,j)),abs(u(i,j)-uxact(i,j)))
+                        max(evmax, abs(v(i, j)-vxact(i, j)), abs(u(i, j)-uxact(i, j)))
                     epmax = &
-                        max(epmax,abs(p(i,j)-pxact(i,j)))
+                        max(epmax, abs(p(i, j)-pxact(i, j)))
                 end do
             end do
 
@@ -358,13 +358,13 @@ program test
 
             allocate( &
                 write_format, &
-                source = '(2(A,1pe15.6)/,A,1pe15.6)' &
+                source = '(2(A, 1pe15.6)/, A, 1pe15.6)' &
                 )
 
             write( stdout, fmt = write_format ) &
                 ' max error in velocity', evmax, &
                 ' max error in geopot. ', epmax, &
-                ' l2 error in velocity ', dvmax,&
+                ' l2 error in velocity ', dvmax, &
                 ' l2 error in geopot.  ', dpmax, &
                 ' maximum divergence   ', dvgm
 
@@ -380,21 +380,21 @@ program test
         call sphere%perform_multiple_real_fft( scrg1, scrm1, 1)
         call sphere%perform_multiple_real_fft( scrg2, scrm2, 1)
 
-        call sphere%get_complex_spherical_harmonic_coefficients(scrm1,scrm2,dvrtdtnm(:,n_new),-1,1)
-        call sphere%get_complex_spherical_harmonic_coefficients(scrm2,scrm1,ddivdtnm(:,n_new),1,-1)
+        call sphere%get_complex_spherical_harmonic_coefficients(scrm1, scrm2, dvrtdtnm(:, n_new), -1, 1)
+        call sphere%get_complex_spherical_harmonic_coefficients(scrm2, scrm1, ddivdtnm(:, n_new), 1, -1)
 
         scrg1 = ug * ( pg + pzero )
         scrg2 = vg * ( pg + pzero )
 
         call sphere%get_complex_spherical_harmonic_coefficients( &
-            scrm1, scrm2, dpdtnm(:,n_new), -1, 1)
+            scrm1, scrm2, dpdtnm(:, n_new), -1, 1)
 
         scrg1 = pg + 0.5_wp * ( ( ug**2 + vg**2 ) / coslat**2 )
 
         call sphere%perform_spherical_harmonic_transform( scrg1, scrnm, 1)
 
         associate( lap => sphere%laplacian )
-            ddivdtnm(:,n_new) = ddivdtnm(:,n_new) - lap * scrnm
+            ddivdtnm(:, n_new) = ddivdtnm(:, n_new) - lap * scrnm
         end associate
 
         !==> update vrt and div with third-order adams-bashforth.
@@ -403,35 +403,35 @@ program test
 
         select case (cycle_number)
             case (0)
-                dvrtdtnm(:,n_now) = dvrtdtnm(:,n_new)
-                dvrtdtnm(:,n_old) = dvrtdtnm(:,n_new)
-                ddivdtnm(:,n_now) = ddivdtnm(:,n_new)
-                ddivdtnm(:,n_old) = ddivdtnm(:,n_new)
-                dpdtnm(:,n_now) = dpdtnm(:,n_new)
-                dpdtnm(:,n_old) = dpdtnm(:,n_new)
+                dvrtdtnm(:, n_now) = dvrtdtnm(:, n_new)
+                dvrtdtnm(:, n_old) = dvrtdtnm(:, n_new)
+                ddivdtnm(:, n_now) = ddivdtnm(:, n_new)
+                ddivdtnm(:, n_old) = ddivdtnm(:, n_new)
+                dpdtnm(:, n_now) = dpdtnm(:, n_new)
+                dpdtnm(:, n_old) = dpdtnm(:, n_new)
             case (1)
-                dvrtdtnm(:,n_old) = dvrtdtnm(:,n_new)
-                ddivdtnm(:,n_old) = ddivdtnm(:,n_new)
-                dpdtnm(:,n_old) = dpdtnm(:,n_new)
+                dvrtdtnm(:, n_old) = dvrtdtnm(:, n_new)
+                ddivdtnm(:, n_old) = ddivdtnm(:, n_new)
+                dpdtnm(:, n_old) = dpdtnm(:, n_new)
         end select
 
         vrtnm = &
             vrtnm + DT * (&
-            (23.0_wp/12.0_wp) * dvrtdtnm(:,n_new) &
-            - (16.0_wp/12.0_wp) * dvrtdtnm(:,n_now) &
-            + (5.0_wp/12.0_wp) * dvrtdtnm(:,n_old) )
+            (23.0_wp/12.0_wp) * dvrtdtnm(:, n_new) &
+            - (16.0_wp/12.0_wp) * dvrtdtnm(:, n_now) &
+            + (5.0_wp/12.0_wp) * dvrtdtnm(:, n_old) )
 
         divnm = &
             divnm + DT *( &
-            (23.0_wp/12.0_wp) * ddivdtnm(:,n_new) &
-            - (16.0_wp/12.0_wp) * ddivdtnm(:,n_now) &
-            + (5.0_wp/12.0_wp) * ddivdtnm(:,n_old) )
+            (23.0_wp/12.0_wp) * ddivdtnm(:, n_new) &
+            - (16.0_wp/12.0_wp) * ddivdtnm(:, n_now) &
+            + (5.0_wp/12.0_wp) * ddivdtnm(:, n_old) )
 
         pnm = &
             pnm + DT * (&
-            (23.0_wp/12.0_wp) * dpdtnm(:,n_new) &
-            - (16.0_wp/12.0_wp) * dpdtnm(:,n_now) &
-            + (5.0_wp/12.0_wp) * dpdtnm(:,n_old) )
+            (23.0_wp/12.0_wp) * dpdtnm(:, n_new) &
+            - (16.0_wp/12.0_wp) * dpdtnm(:, n_now) &
+            + (5.0_wp/12.0_wp) * dpdtnm(:, n_old) )
 
         !==> SWITCH INDICES.
 
@@ -524,7 +524,7 @@ contains
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        integer (ip)           :: i,j !! Counters
+        integer (ip)           :: i, j !! Counters
         real (wp), allocatable ::  w(:)
         !--------------------------------------------------------------------------------
 
@@ -536,7 +536,7 @@ contains
                 do j = 1, n
                     w(j) = 0.0_wp
                     do i = 1, n
-                        associate( sin_arg => real(i*j,kind=wp)*arg )
+                        associate( sin_arg => real(i*j, kind=wp)*arg )
                             w(j) = w(j)+x(i)*sin(sin_arg)
                         end associate
                     end do
@@ -569,7 +569,7 @@ contains
         return_value = 0.0_wp
 
         associate( n => size(cf) )
-            do i=1,n
+            do i=1, n
                 return_value = return_value + cf(i)*cos(i*theta)
             end do
         end associate

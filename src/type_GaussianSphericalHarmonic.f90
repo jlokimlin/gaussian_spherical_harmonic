@@ -33,9 +33,9 @@ module type_GaussianSphericalHarmonic
         real (wp), allocatable,    private :: scaled_gaussian_weights(:)
         real (wp), allocatable,    public  :: laplacian(:)
         real (wp), allocatable,    private :: inverse_laplacian(:)
-        real (wp), allocatable,    private :: associated_legendre_functions(:,:)
-        real (wp), allocatable,    private :: legendre_derivative_quantity(:,:)
-        logical,                   private :: initialized = .false.
+        real (wp), allocatable,    private :: associated_legendre_functions(:, :)
+        real (wp), allocatable,    private :: legendre_derivative_quantity(:, :)
+        logical,                    private :: initialized = .false.
         !---------------------------------------------------------------------------------
     contains
         !---------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine initialize_gaussian_spherical_harmonic(this,nlon,nlat,ntrunc,re)
+    subroutine initialize_gaussian_spherical_harmonic(this, nlon, nlat, ntrunc, re)
         !
         ! Purpose:
         !
@@ -98,8 +98,8 @@ contains
             allocate(this%indxn(nmdim))
             allocate(this%laplacian(nmdim))
             allocate(this%inverse_laplacian(nmdim))
-            allocate(this%associated_legendre_functions(nmdim,nlat))
-            allocate(this%legendre_derivative_quantity(nmdim,nlat))
+            allocate(this%associated_legendre_functions(nmdim, nlat))
+            allocate(this%legendre_derivative_quantity(nmdim, nlat))
             allocate(this%trigonometric_functions((3*nlon/2)+1))
             allocate(this%ifax(13))
 
@@ -120,14 +120,14 @@ contains
                 call get_latitudes_and_gaussian_weights( gaulats, weights )
 
                 gwrc = weights/(re * (1.0_wp - (gaulats**2)))
-                indxm = [ ((m, n = m,ntrunc), m = 0, ntrunc) ]
-                indxn = [ ((n, n = m,ntrunc), m = 0, ntrunc) ]
-                lap(:)= -real(indxn(:), kind=wp) * real(indxn(:) + 1, kind=wp) / (re**2)
+                indxm = [ ((m, n = m, ntrunc), m = 0, ntrunc) ]
+                indxn = [ ((n, n = m, ntrunc), m = 0, ntrunc) ]
+                lap = -real(indxn, kind=wp) * real(indxn + 1, kind=wp) / (re**2)
                 ilap(1) = 0.0_wp
                 ilap(2:nmdim) = 1.0_wp/lap(2:nmdim)
 
                 do j = 1, nlat
-                    call compute_associated_legendre_functions( gaulats(j), pnm(:,j), hnm(:,j) )
+                    call compute_associated_legendre_functions( gaulats(j), pnm(:, j), hnm(:, j) )
                 end do
 
                 call initialize_fft99( trigs, ifax, nlon)
@@ -214,14 +214,14 @@ contains
             )
 
 
-            do i=1,nlat
+            do i=1, nlat
                 z = cos(pi*(real(i, kind=wp) - 0.25_wp)/(real(nlat, kind=wp) + 0.5_wp))
 
                 do iteration_counter = 1, MAXIMUM_NUMBER_OF_ITERATIONS
                     p1 = 1.0_wp
                     p2 = 0.0_wp
 
-                    do j=1,nlat
+                    do j=1, nlat
                         p3 = p2
                         p2 = p1
                         p1 = ((2.0_wp*j - 1.0_wp)*z*p2 - (j - 1.0_wp)*p3)/j
@@ -381,7 +381,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine perform_multiple_real_fft(this, data, coeff, idir)
+    subroutine perform_multiple_real_fft( this, data, coeff, idir)
         !
         ! Purpose:
         !
@@ -391,8 +391,8 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: data(:,:)
-        complex (wp),                      intent(in out) :: coeff(:,:)
+        real (wp),                         intent(in out) :: data(:, :)
+        complex (wp),                      intent(in out) :: coeff(:, :)
         integer (ip),                      intent(in)     :: idir
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
@@ -440,12 +440,12 @@ contains
     		
                     n = 0
                     input_output_data = 0.0_wp
-                    do j=1,nlats
-                        do i=1,nlons+2
+                    do j=1, nlats
+                        do i=1, nlons+2
                             n = n + 1
                             input_output_data(n) = 0.0_wp
                             if (i <= nlons) then
-                                input_output_data(n) = data(i,j)
+                                input_output_data(n) = data(i, j)
                             end if
                         end do
                     end do
@@ -454,12 +454,12 @@ contains
                         input_output_data, workspace, trigs, ifax, 1, nlons+2, nlons, nlats, -1 )
     		
                     n = -1
-                    do j=1,nlats
-                        do m=1,(nlons/2)+1
+                    do j=1, nlats
+                        do m=1, (nlons/2)+1
                             n = n + 2
                             if (m <= mwaves) then
-                                coeff(m,j) = &
-                                    cmplx(input_output_data(n),input_output_data(n+1), kind=wp)
+                                coeff(m, j) = &
+                                    cmplx(input_output_data(n), input_output_data(n+1), kind=wp)
                             end if
                         end do
                     end do
@@ -467,24 +467,25 @@ contains
     		
                     input_output_data = 0.0_wp
                     n = -1
-                    do j=1,nlats
-                        do m=1,(nlons/2)+1
+                    do j=1, nlats
+                        do m=1, (nlons/2)+1
                             n = n + 2
                             if (m <= mwaves) then
-                                input_output_data(n) = real(coeff(m,j), kind=wp)
-                                input_output_data(n+1) = aimag(coeff(m,j))
+                                input_output_data(n) = real(coeff(m, j), kind=wp)
+                                input_output_data(n+1) = aimag(coeff(m, j))
                             end if
                         end do
                     end do
     		
-                    call perform_fft991(input_output_data,workspace,trigs,ifax,1,nlons+2,nlons,nlats,1)
-    		
+                    call perform_fft991( &
+                        input_output_data, workspace, trigs, ifax, 1, nlons + 2, nlons, nlats, 1 )
+
                     n = 0
-                    do j=1,nlats
-                        do i=1,nlons+2
+                    do j=1, nlats
+                        do i=1, nlons+2
                             n = n + 1
                             if (i <= nlons) then
-                                data(i,j) = input_output_data(n)
+                                data(i, j) = input_output_data(n)
                             end if
                         end do
                     end do
@@ -514,13 +515,13 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)      :: this
-        real (wp),                         intent (in out) :: ugrid(:,:)
+        real (wp),                         intent (in out) :: ugrid(:, :)
         complex (wp),                      intent (in out) :: anm(:)
         integer (ip),                      intent(in)      :: idir
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable  :: am(:,:)
+        complex (wp), allocatable  :: am(:, :)
         integer (ip)               :: nmstrt
         integer (ip)               :: nm !! index
         integer (ip)               :: m, n, j !! Counters
@@ -551,17 +552,17 @@ contains
     		
                     ! == > perform ffts on each latitude.
     		
-                    call perform_multiple_real_fft(this, ugrid, am, 1)
+                    call this%perform_multiple_real_fft( ugrid, am, 1)
     		
                     ! == >  sum over all gaussian latitudes for each mode and each wave to
                     !     obtain the transformed variable in spectral space.
     		
-                    do j=1,nlats
+                    do j=1, nlats
                         nmstrt = 0
                         do m = 1, mwaves
                             do n = 1, mwaves-m+1
                                 nm = nmstrt + n
-                                anm(nm)=anm(nm)+pnm(nm,j)*weights(j)*am(m,j)
+                                anm(nm)=anm(nm)+pnm(nm, j)*weights(j)*am(m, j)
                             end do
                             nmstrt = nmstrt + mwaves-m+1
                         end do
@@ -578,10 +579,10 @@ contains
     		
                         nmstrt = 0
                         do m = 1, mwaves
-                            am(m,j) = cmplx(0.0_wp, 0.0_wp, kind=wp)
+                            am(m, j) = cmplx(0.0_wp, 0.0_wp, kind=wp)
                             do n = 1, mwaves-m+1
                                 nm = nmstrt + n
-                                am(m,j) = am(m,j)  +  anm(nm) * pnm(nm,j)
+                                am(m, j) = am(m, j)  +  anm(nm) * pnm(nm, j)
                             end do
                             nmstrt = nmstrt + mwaves-m+1
                         end do
@@ -590,7 +591,7 @@ contains
                     ! == >  Fourier transform to compute the values of the variable in grid
                     !     space at the j-th latitude.
     		
-                    call perform_multiple_real_fft(this, ugrid, am, -1)
+                    call this%perform_multiple_real_fft( ugrid, am, -1)
                 case default
                     error stop 'Calling argument idir must be -1 or +1!'
             end select
@@ -603,26 +604,26 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine get_velocities_from_vorticity_and_divergence(this,vrtnm,divnm,ug,vg)
+    subroutine get_velocities_from_vorticity_and_divergence(this, vrtnm, divnm, ug, vg)
         !
         ! Purpose:
         !
-        ! Computes U,V (winds times cos(lat)) from vrtnm,divnm
+        ! Computes U, V (winds times cos(lat)) from vrtnm, divnm
         ! (spectral coeffs of vorticity and divergence).
         !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)  :: this
-        real (wp),                         intent(out) :: ug(:,:)
-        real (wp),                         intent(out) :: vg(:,:)
+        real (wp),                         intent(out) :: ug(:, :)
+        real (wp),                         intent(out) :: vg(:, :)
         complex (wp),                      intent(in)  :: vrtnm(:)
         complex (wp),                      intent(in)  :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:,:)
-        complex (wp), allocatable :: vm(:,:)
+        complex (wp), allocatable :: um(:, :)
+        complex (wp), allocatable :: vm(:, :)
         integer (ip)              :: n, m, j !! Counters
         integer (ip)              :: nm
         integer (ip)              :: nmstrt
@@ -630,7 +631,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in getuv!'
+            error stop 'uninitialized object in GET_VELOCITIES_FROM_VORTICITY_AND_DIVERGENCE!'
         end if
 
         associate( &
@@ -651,21 +652,21 @@ contains
                 nmstrt = 0
                 do m = 1, mwaves
                     rm = real( m - 1, kind=wp)
-                    um(m,j) = 0.0_wp
-                    vm(m,j) = 0.0_wp
+                    um(m, j) = 0.0_wp
+                    vm(m, j) = 0.0_wp
                     do n = 1, mwaves - m + 1
 
                         nm = nmstrt + n
 
-                        um(m,j) = &
-                            um(m,j) + (ilap(nm)/re)*( &
-                            cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*pnm(nm,j) + &
-                            vrtnm(nm)*hnm(nm,j) )
+                        um(m, j) = &
+                            um(m, j) + (ilap(nm)/re)*( &
+                            cmplx(0.0_wp, rm, kind=wp) * divnm(nm) * pnm(nm, j) + &
+                            vrtnm(nm)*hnm(nm, j) )
 
-                        vm(m,j) = &
-                            vm(m,j) + (ilap(nm)/re)*( &
-                            cmplx(0.0,rm, kind=wp) * vrtnm(nm)*pnm(nm,j) - &
-                            divnm(nm)*hnm(nm,j) )
+                        vm(m, j) = &
+                            vm(m, j) + (ilap(nm)/re)*( &
+                            cmplx(0.0, rm, kind=wp) * vrtnm(nm) * pnm(nm, j) - &
+                            divnm(nm)*hnm(nm, j) )
 
                     end do
                     nmstrt = nmstrt + mwaves - m + 1
@@ -673,8 +674,8 @@ contains
             end do
         end associate
 
-        call perform_multiple_real_fft(this, ug, um, -1)
-        call perform_multiple_real_fft(this, vg, vm, -1)
+        call this%perform_multiple_real_fft( ug, um, -1)
+        call this%perform_multiple_real_fft( vg, vm, -1)
 
         ! Free memory
         deallocate( um )
@@ -684,26 +685,26 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine get_vorticity_and_divergence_from_velocities(this,vrtnm,divnm,ug,vg)
+    subroutine get_vorticity_and_divergence_from_velocities(this, vrtnm, divnm, ug, vg)
         !
         ! Purpose:
         !
         ! Computes vrtnm, divnm (spectral coeffs of vorticity and
-        ! divergence) from U,V (winds time cos(lat)).
+        ! divergence) from U, V (winds time cos(lat)).
         !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: ug(:,:)
-        real (wp),                         intent(in out) :: vg(:,:)
+        real (wp),                         intent(in out) :: ug(:, :)
+        real (wp),                         intent(in out) :: vg(:, :)
         complex (wp),                      intent(in)     :: vrtnm(:)
         complex (wp),                      intent(in)     :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:,:)
-        complex (wp), allocatable :: vm(:,:)
+        complex (wp), allocatable :: um(:, :)
+        complex (wp), allocatable :: vm(:, :)
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
@@ -721,11 +722,11 @@ contains
 
         end associate
 
-        call perform_multiple_real_fft(this, ug, um, 1)
-        call perform_multiple_real_fft(this, vg, vm, 1)
+        call this%perform_multiple_real_fft( ug, um, 1)
+        call this%perform_multiple_real_fft( vg, vm, 1)
 
-        call get_complex_spherical_harmonic_coefficients(this,um,vm,divnm,1,1)
-        call get_complex_spherical_harmonic_coefficients(this,vm,um,vrtnm,1,-1)
+        call this%get_complex_spherical_harmonic_coefficients( um, vm, divnm, 1, 1)
+        call this%get_complex_spherical_harmonic_coefficients( vm, um, vrtnm, 1, -1)
 
         ! Free memory
         deallocate( um )
@@ -744,7 +745,7 @@ contains
         !  isign1*( (1./re*(1.-x**2))*d(ag)/d(lon) + (isign2/re)*d(bg)/dx )
         !
         !  where x = sin(lat), isign1 and isign2 are either +1 or -1,
-        !  ag and bg are the physical space values of am,bm and re
+        !  ag and bg are the physical space values of am, bm and re
         !  is the radius of the sphere.
         !
         !  the result is returned in anm.
@@ -757,9 +758,9 @@ contains
         class (GaussianSphericalHarmonic), intent(in) :: this
         integer (ip),                      intent(in) :: isign1
         integer (ip),                      intent(in) :: isign2
-        complex (wp)                                  :: anm(:)
-        complex (wp),                      intent(in) :: am(:,:)
-        complex (wp),                      intent(in) :: bm(:,:)
+        complex (wp)                                   :: anm(:)
+        complex (wp),                      intent(in) :: am(:, :)
+        complex (wp),                      intent(in) :: bm(:, :)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
@@ -794,7 +795,7 @@ contains
 
             anm = 0.0_wp
 
-            do j = 1,nlats
+            do j = 1, nlats
                 nmstrt = 0
                 do m = 1, mwaves
                     rm = real( m - 1, kind=wp )
@@ -802,9 +803,9 @@ contains
                         nm = nmstrt + n
                         anm(nm) = &
                             anm(nm) &
-                            + sign1 * gwrc(j) * (cmplx(0.0_wp,rm,kind=wp) &
-                            * pnm(nm,j) * am(m,j) &
-                            + sign2 * hnm(nm,j) * bm(m,j))
+                            + sign1 * gwrc(j) * (cmplx(0.0_wp, rm, kind=wp) &
+                            * pnm(nm, j) * am(m, j) &
+                            + sign2 * hnm(nm, j) * bm(m, j))
                     end do
                     nmstrt = nmstrt + mwaves - m +1
                 end do
@@ -821,20 +822,20 @@ contains
         ! Purpose:
         !
         ! Computes coslat * gradient of spectral coefficients (divnm)
-        ! vector gradient returned on grid as (ug,vg)
+        ! vector gradient returned on grid as (ug, vg)
         !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)  :: this
-        real (wp),                         intent(out) :: ug(:,:)
-        real (wp),                         intent(out) :: vg(:,:)
+        real (wp),                         intent(out) :: ug(:, :)
+        real (wp),                         intent(out) :: vg(:, :)
         complex (wp),                      intent(in)  :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:,:)
-        complex (wp), allocatable :: vm(:,:)
+        complex (wp), allocatable :: um(:, :)
+        complex (wp), allocatable :: vm(:, :)
         integer (ip)              :: n, m, j !! Counters
         integer (ip)              :: nm
         integer (ip)              :: nmstrt
@@ -862,17 +863,17 @@ contains
                 nmstrt = 0
                 do m = 1, mwaves
                     rm = real( m - 1, kind=wp)
-                    um(m,j) = 0.0_wp
-                    vm(m,j) = 0.0_wp
+                    um(m, j) = 0.0_wp
+                    vm(m, j) = 0.0_wp
                     do n = 1, mwaves - m + 1
                         nm = nmstrt + n
-                        um(m,j) = &
-                            um(m,j) + (1.0_wp/re)* &
-                            cmplx(0.0_wp,rm, kind=wp)*divnm(nm)*pnm(nm,j)
+                        um(m, j) = &
+                            um(m, j) + (1.0_wp/re)* &
+                            cmplx(0.0_wp, rm, kind=wp)*divnm(nm)*pnm(nm, j)
 
-                        vm(m,j) = &
-                            vm(m,j) - (1.0_wp/re)* &
-                            divnm(nm)*hnm(nm,j)
+                        vm(m, j) = &
+                            vm(m, j) - (1.0_wp/re)* &
+                            divnm(nm)*hnm(nm, j)
                     end do
                     nmstrt = nmstrt + mwaves - m + 1
                 end do
@@ -880,8 +881,8 @@ contains
 
         end associate
 
-        call perform_multiple_real_fft(this, ug, um, -1)
-        call perform_multiple_real_fft(this, vg, vm, -1)
+        call this%perform_multiple_real_fft( ug, um, -1)
+        call this%perform_multiple_real_fft( vg, vm, -1)
 
         ! Free memory
         deallocate( um )
@@ -891,7 +892,7 @@ contains
     !
     !*****************************************************************************************
     !
-    subroutine perform_isotropic_spectral_smoothing(this,datagrid,smooth)
+    subroutine perform_isotropic_spectral_smoothing(this, datagrid, smooth)
         !
         ! Purpose:
         !
@@ -903,7 +904,7 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: datagrid(:,:)
+        real (wp),                         intent(in out) :: datagrid(:, :)
         real (wp),                         intent(in)     :: smooth(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
@@ -925,14 +926,14 @@ contains
 
             allocate( dataspec((ntrunc+1)*(ntrunc+2)/2) )
 
-            call perform_spherical_harmonic_transform(this, datagrid, dataspec, 1)
+            call this%perform_spherical_harmonic_transform( datagrid, dataspec, 1)
 
             do nm =1, nmdim
                 n = indxn(nm)
                 dataspec(nm) = dataspec(nm)*smooth(n + 1)
             end do
 
-            call perform_spherical_harmonic_transform(this, datagrid, dataspec, -1)
+            call this%perform_spherical_harmonic_transform( datagrid, dataspec, -1)
 
         end associate
 
