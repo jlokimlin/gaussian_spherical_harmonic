@@ -1,10 +1,8 @@
-# *gaussian_spherical_harmonic*
+# *gaussian\_spherical\_harmonic*
  
-A library of modern Fortran software that can be used to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
+A object-oriented library in modern Fortran to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
 
-The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+).
-
-The main **GausianSphericalHarmonic** object now encapsulates the previous subroutines as type-bound procedures and all previous instances of pointers are now replaced with allocatable arrays to circumvent potential memory leaks.
+The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+). More specifically, the former object-based **sphere** type, i.e., class was rebaptized as **GausianSphericalHarmonic**. This class now encapsulates all the relevant subroutines as type-bound procedures and all previous instances of pointers are replaced with allocatable arrays to circumvent potential memory leaks.
 
 -----------------------------------------------------------------------------
 
@@ -38,38 +36,36 @@ By creating multiple instances of **GausianSphericalHarmonic**, spherical harmon
 
 ### Class variables, i.e., type components are:
 
- **NUMBER\_OF\_LONGITUDES** (integer) - number of longitudinal points 
+**NUMBER\_OF\_LONGITUDES** (integer) - number of longitudinal points.
  
-**NUMBER\_OF\_LATITUDES** (integer) - number of latitudinal points
+**NUMBER\_OF\_LATITUDES** (integer) - number of latitudinal points.
  
-**TRIANGULAR\_TRUNCATION\_LIMIT** (integer) - triangular truncation limit
+**TRIANGULAR\_TRUNCATION\_LIMIT** (integer) - triangular truncation limit.
  
-**RADIUS\_OF\_SPHERE** (real) - radius of sphere in meters
+**RADIUS\_OF\_SPHERE** (real) - radius of sphere in meters.
  
 **associated\_legendre\_functions** (real allocatable array dimension ```((ntrunc+1)*(ntrunc+2)/2, nlat)``` ) - Associated legendre polynomials.
  
- **legendre\_derivative\_quantity** (real allocatable array, same size as *associated_legendre_functions*) = ```(-(1 - x**2)) (pnm/dx)```
+**legendre\_derivative\_quantity** (real allocatable array, same size as *associated_legendre_functions*) = ```(-(1 - x**2)) (pnm/dx)```
  at ```x = sin(theta).```
  
- **gaussian\_latitudes** (real allocatable array dimension ```nlat```) - ```sin(theta).```
+**gaussian\_latitudes** (real allocatable array dimension ```nlat```) - ```sin(theta).```
  
- **gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights.
+**gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights.
  
- **scaled\_gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights divided by ```Re(1-x**2)```.
+**scaled\_gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights divided by ```Re(1-x**2)```.
  
- **INDEX_ORDER_M** (integer allocatable array dimension (```(ntrunc+1)(ntrunc+2)/2```) - value of
- zonal wavenumber ```m``` corresponding to spectral array index ```nm=1,(ntrunc+1)*(ntrunc+2)/2)```
+**INDEX\_ORDER\_M** (integer allocatable array dimension (```(ntrunc+1)(ntrunc+2)/2```) - value of zonal wavenumber ```m``` corresponding to spectral array index ```nm=1,(ntrunc+1)*(ntrunc+2)/2)```
  
- **INDEX_DEGREE_N** (integer allocatable array same size as *INDEX_ORDER_M*) - value of spherical harmonic degree ```n``` corresponding to spectral array index ```nm = 1,(ntrunc+1)*(ntrunc+2)/2)```
+**INDEX\_DEGREE\_N** (integer allocatable array same size as *INDEX\_ORDER\_M*) - value of spherical harmonic degree ```n``` corresponding to spectral array index ```nm = 1,(ntrunc+1)*(ntrunc+2)/2)```
  
- **laplacian** (real allocatable array dimension (```ntrunc+1)*(ntrunc+2)/2``` ) - lapacian operator in spectral space = ```-n(n+1)/Re**2```, where ```n``` is degree of spherical harmonic.
+**laplacian** (real allocatable array dimension (```ntrunc+1)*(ntrunc+2)/2``` ) - lapacian operator in spectral space = ```-n(n+1)/Re**2```, where ```n``` is degree of spherical harmonic.
  
- **inverse\_laplacian** (real allocatable array same size as *laplacian*) - inverse laplacian operator in
- spectral space.
+**inverse\_laplacian** (real allocatable array same size as *laplacian*) - inverse laplacian operator in spectral space.
  
- **trigonometric\_functions**, **ifax**: private arrays needed by Temperton FFT.
+**trigonometric\_functions**, **ifax**: private arrays needed by Temperton FFT.
  
- **initialized** (logical) - true if instance of object has been initialized by call to create, false if not initialized.
+**initialized** (logical) - true if instance of object has been initialized by call to create, false if not initialized.
 
 -----------------------------------------------------------------------------
 
