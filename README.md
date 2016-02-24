@@ -1,4 +1,4 @@
-# *gaussian\_spherical\_harmonic*
+# **gaussian\_spherical\_harmonic**
  
 A object-oriented library in modern Fortran to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
 
