@@ -78,7 +78,7 @@ By creating multiple instances of **GausianSphericalHarmonic**, spherical harmon
      sphere%create( nlon, nlat, ntrunc, re ) 
 ```
 
-Initializes an object instance of **GausianSphericalHarmonic**. Inputs are *nlon* (number of unique longitudes), *nlat* (number of gaussian latitudes), and *re* (radius of sphere in meters). Must be called before anything else.
+Initializes an object instance of **GausianSphericalHarmonic**. Inputs are ```nlon``` (number of unique longitudes), ```nlat``` (number of gaussian latitudes), and ```re``` (radius of sphere in meters). Must be called before anything else.
     
 ```fortran
 
@@ -142,9 +142,9 @@ Inputs: ```smooth(ntrunc+1)``` (smoothing factor as a function of spherical harm
 Outputs: ```datagrid``` (smoothed gridded data).
 
 ```fortran
-    
+
     sphere%get_complex_spherical_harmonic_coefficients( am, bm, anm, isign1, isign2 )
-    ```
+```
     
 Given the arrays of fourier coeffs, ```am``` and ```bm```, computes the complex spherical harmonic coeffs ```anm``` of:
  ```isign1*( (1./rsphere*(1.-x**2))*d(ag)/d(lon) + (isign2/rsphere)*d(bg)/dx )``` where ```ag``` and ```bg``` are the grid point counterparts of ```am```, ```bm,``` ```isign1```, ```isign2``` are +1 or -1, ```rsphere``` is radius of sphere, ```x=sin(lat)```) ```am```, ```bm``` can be computed from gridded data ```(ag,bg)``` using *perform\_multiple\_real\_fft*.
@@ -167,7 +167,7 @@ Computes fourier harmonics in zonal direction of a gridded array.  ```idir=+1 ``
  equal to 4. The efficiency of the computation is improved when  ```nlon ``` is a
  product of small prime numbers.
 
- The spectral data is assumed to be in a complex array of dimension  ```(NTRUNC+1)*(NTRUNC+2)/2. ```   ```NTRUNC ``` is the triangular truncation limit ( ```NTRUNC=42 ``` for  ```T42 ```).  ```NTRUN ``` must be  ```<= nlon/2. ``` Coefficients are ordered so that first  ```(nm=1) ``` is  ```m=0,n=0, ``` second is  ```m=0,n=1, nm=mtrunc ``` is  ```m=0,n=mtrunc, nm=mtrunc+1 ``` is  ```m=1,n=1, ``` etc. In Fortran syntax, values of  ```m ``` (degree) and  ```n ``` (order) corresponding as a function of the index  ```nm ``` are:
+The spectral data is assumed to be in a complex array of dimension ```(NTRUNC+1)*(NTRUNC+2)/2. ``` ```NTRUNC ``` is the triangular truncation limit ( ```NTRUNC=42 ``` for  ```T42 ```).  ```NTRUN ``` must be  ```<= nlon/2. ``` Coefficients are ordered so that first  ```(nm=1) ``` is  ```m=0,n=0, ``` second is  ```m=0,n=1, nm=mtrunc ``` is  ```m=0,n=mtrunc, nm=mtrunc+1 ``` is  ```m=1,n=1, ``` etc. In Fortran syntax, values of  ```m ``` (degree) and  ```n ``` (order) corresponding as a function of the index  ```nm ``` are:
 
 ```fortran
     
