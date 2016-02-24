@@ -9,10 +9,10 @@ module type_GaussianSphericalHarmonic
         perform_fft991, &
         initialize_fft99
 
-    ! Explicit typing
+    ! Explicit typing only
     implicit none
-    ! everything private to module, unless otherwise specified.
 
+    ! Everything is private unless stated otherwise
     private
     public :: GaussianSphericalHarmonic
 
@@ -39,7 +39,7 @@ module type_GaussianSphericalHarmonic
         !---------------------------------------------------------------------------------
     contains
         !---------------------------------------------------------------------------------
-        ! Class variables
+        ! Class methods
         !---------------------------------------------------------------------------------
         procedure, public         :: create => initialize_gaussian_spherical_harmonic
         procedure, public         :: destroy => destroy_gaussian_spherical_harmonic
@@ -52,6 +52,7 @@ module type_GaussianSphericalHarmonic
         procedure, public         :: get_complex_spherical_harmonic_coefficients
         procedure, nopass, public :: get_latitudes_and_gaussian_weights
         procedure, nopass, public :: compute_associated_legendre_functions
+        final                       :: finalize_gaussian_spherical_harmonic
         !---------------------------------------------------------------------------------
     end type GaussianSphericalHarmonic
 
@@ -76,8 +77,11 @@ contains
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        integer (ip) ::m, n, j !! Counters
+        integer (ip) :: m, n, j !! Counters
         !--------------------------------------------------------------------------------
+
+        ! Check if object is usable
+        if (this%initialized) call this%destroy()
 
         ! Set contants
         this%NUMBER_OF_LONGITUDES = nlon
@@ -155,21 +159,39 @@ contains
 
         if (.not. this%initialized) return
 
-        deallocate(this%gaussian_latitudes)
-        deallocate(this%gaussian_weights)
-        deallocate(this%scaled_gaussian_weights)
-        deallocate(this%associated_legendre_functions)
-        deallocate(this%legendre_derivative_quantity)
-        deallocate(this%indxm)
-        deallocate(this%indxn)
-        deallocate(this%laplacian)
-        deallocate(this%inverse_laplacian)
-        deallocate(this%trigonometric_functions)
-        deallocate(this%ifax)
+        if (allocated(this%gaussian_latitudes)) deallocate(this%gaussian_latitudes)
+        if (allocated(this%gaussian_weights)) deallocate(this%gaussian_weights)
+        if (allocated(this%scaled_gaussian_weights)) deallocate(this%scaled_gaussian_weights)
+        if (allocated(this%associated_legendre_functions)) deallocate(this%associated_legendre_functions)
+        if (allocated(this%legendre_derivative_quantity)) deallocate(this%legendre_derivative_quantity)
+        if (allocated(this%indxm)) deallocate(this%indxm)
+        if (allocated(this%indxn)) deallocate(this%indxn)
+        if (allocated(this%laplacian )) deallocate(this%laplacian)
+        if (allocated(this%inverse_laplacian)) deallocate(this%inverse_laplacian)
+        if (allocated(this%trigonometric_functions)) deallocate(this%trigonometric_functions)
+        if (allocated(this%ifax)) deallocate(this%ifax)
 
         this%initialized = .false.
 
     end subroutine destroy_gaussian_spherical_harmonic
+    !
+    !*****************************************************************************************
+    !
+    subroutine finalize_gaussian_spherical_harmonic(this)
+        !
+        ! Purpose:
+        !
+        ! Deallocate allocatables in object.
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        type (GaussianSphericalHarmonic), intent(in out) :: this
+        !--------------------------------------------------------------------------------
+
+        call this%destroy()
+
+    end subroutine finalize_gaussian_spherical_harmonic
     !
     !*****************************************************************************************
     !
@@ -280,102 +302,102 @@ contains
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
         integer (ip) :: m
-        integer (ip) ::n
-        integer (ip) ::nm
-        integer (ip) ::i
-        integer (ip) ::nmax
-        integer (ip) ::np1
-        integer (ip) ::nmstrt
-        integer (ip) ::j
-        integer (ip) ::nmdim
-        integer (ip) ::ntrunc
-        real (wp):: a
-        real (wp):: b
-        real (wp):: prod
-        real (wp):: sinsq
-        real (wp):: eps
-        real (wp):: epsnmp1
-        real (wp):: epspmn
-        real (wp):: pmnj
-        real (wp):: pmnjm1
-        real (wp):: pmnjm2
-
+        integer (ip) :: n
+        integer (ip) :: nm
+        integer (ip) :: i, j ! Counters
+        integer (ip) :: nmax
+        integer (ip) :: np1
+        integer (ip) :: nmstrt
+        real (wp)    :: a
+        real (wp)    :: b
+        real (wp)    :: prod
+        real (wp)    :: sinsq
+        real (wp)    :: eps
+        real (wp)    :: epsnmp1
+        real (wp)    :: epspmn
+        real (wp)    :: pmnj
+        real (wp)    :: pmnjm1
+        real (wp)    :: pmnjm2
+        !--------------------------------------------------------------------------------
 
         !**** set parameters for entry into the recursive formulae.
 
-
         sinsq = 1.0_wp - x * x
-
         a     = 1.0_wp
         b     = 0.0_wp
         prod  = 1.0_wp
 
-        nmdim = size(pmn)
-        ntrunc = nint((-1.0_wp + sqrt(1.0_wp + 8.0_wp*real(nmdim, kind=wp)))/2.0_wp, kind=ip)-1
+        associate( &
+            nmdim => size(pmn), &
+            ntrunc => nint((-1.0_wp + sqrt(1.0_wp + 8.0_wp*real(size(pmn), kind=wp)))/2.0_wp, kind=ip)-1 &
+            )
 
-        if (size(pmn) /= size(hmn)) then
-            error stop 'pnm and hnm must be same size in subroutine legend!'
-        end if
-
-        !**** loop for the 'm' index.
-
-        nmstrt = 0
-        do i = 1, ntrunc + 1
-
-            m = (i - 1)
-            nmax = ntrunc + 1 - m
-
-            !        when m=0 (i=1), standard legendre polynomials are
-            !        generated.
-
-            if (m /= 0) then
-                a    = a + 2.0_wp
-                b    = b + 2.0_wp
-                prod = prod * sinsq * a / b
+            if (size(pmn) /= size(hmn)) then
+                error stop 'pnm and hnm must be same size in subroutine legend!'
             end if
 
-            !****    generate pmn and hmn for j = 1 and 2.
+            !**** loop for the 'm' index.
 
-            pmnjm2   = sqrt(0.5_wp * prod)
-            nm = nmstrt + 1
-            pmn(nm) = pmnjm2
+            nmstrt = 0
+            do i = 1, ntrunc + 1
 
-            pmnjm1   = sqrt( real(2 * m + 3, kind=wp) ) * x * pmnjm2
-            if (nm /= nmdim) pmn(nm+1) = pmnjm1
+                m = (i - 1)
+                nmax = ntrunc + 1 - m
 
-            np1 = m + 1
-            epsnmp1 = sqrt( real(np1*np1 - m*m, kind=wp) / real(4*np1*np1 - 1, kind=wp) )
-            epspmn   = x * pmnjm1 - epsnmp1 * pmnjm2
+                !        when m=0 (i=1), standard legendre polynomials are
+                !        generated.
 
-            hmn(nm) = real(m, kind=wp) * epsnmp1 * pmnjm1
-            if (nm /= nmdim) &
-                hmn(nm+1) = real(m+1, kind=wp) * epspmn  -  &
-                real(m+2, kind=wp) * epsnmp1 * pmnjm2
+                if (m /= 0) then
+                    a    = a + 2.0_wp
+                    b    = b + 2.0_wp
+                    prod = prod * sinsq * a / b
+                end if
 
-            !****    loop for the 'n' index.
-            !        now apply the recursion formulae for j >= 3.
+                !****    generate pmn and hmn for j = 1 and 2.
 
-            do j = 3, nmax
-                n = m + j - 1
-                nm = nmstrt + j
-                eps = sqrt( real(n*n - m*m, kind=wp) / real(4*n*n - 1, kind=wp) )
-                pmnj = epspmn / eps
-                pmn(nm) = pmnj
+                nm = nmstrt + 1
+                np1 = m + 1
+                pmnjm2 = sqrt(0.5_wp * prod)
+                pmn(nm) = pmnjm2
+                pmnjm1 = sqrt( real(2 * m + 3, kind=wp) ) * x * pmnjm2
 
-                !        compute eps * pmn for j+1.
+                if (nm /= nmdim) then
+                    pmn(nm+1) = pmnjm1
+                end if
 
-                epspmn = x * pmnj - eps * pmnjm1
 
-                !        compute the derivative.
+                epsnmp1 = sqrt( real(np1*np1 - m*m, kind=wp) / real(4*np1*np1 - 1, kind=wp) )
+                epspmn   = x * pmnjm1 - epsnmp1 * pmnjm2
+                hmn(nm) = real(m, kind=wp) * epsnmp1 * pmnjm1
 
-                hmn(nm) = real( n, kind=wp) * epspmn -  &
-                    real( n + 1, kind=wp) * eps * pmnjm1
+                if (nm /= nmdim) then
+                    hmn(nm+1) = real(m+1, kind=wp) * epspmn  - real(m+2, kind=wp) * epsnmp1 * pmnjm2
+                end if
 
-                pmnjm2   = pmnjm1
-                pmnjm1   = pmnj
+                !****    loop for the 'n' index.
+                !        now apply the recursion formulae for j >= 3.
+
+                do j = 3, nmax
+
+                    n = m + j - 1
+                    nm = nmstrt + j
+                    eps = sqrt( real(n*n - m*m, kind=wp) / real(4*n*n - 1, kind=wp) )
+                    pmnj = epspmn / eps
+                    pmn(nm) = pmnj
+
+                    !        compute eps * pmn for j+1.
+                    epspmn = x * pmnj - eps * pmnjm1
+
+                    !        compute the derivative.
+                    hmn(nm) = real( n, kind=wp) * epspmn - real( n + 1, kind=wp) * eps * pmnjm1
+
+                    pmnjm2 = pmnjm1
+                    pmnjm1 = pmnj
+                end do
+                nmstrt = nmstrt + nmax
             end do
-            nmstrt = nmstrt + nmax
-        end do
+
+        end associate
 
     end subroutine compute_associated_legendre_functions
     !
@@ -399,11 +421,11 @@ contains
         !--------------------------------------------------------------------------------
         real (wp), allocatable :: input_output_data(:)
         real (wp), allocatable :: workspace(:)
-        integer (ip)           :: i, j, m, n !! Counters
+        integer (ip)            :: i, j, m, n !! Counters
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in perform_multiple_real_fft!'
+            error stop 'uninitialized object in perform_multiple_real_fft!'
         end if
 
         if ( this%TRIANGULAR_TRUNCATION_LIMIT > this%NUMBER_OF_LONGITUDES/2) then
@@ -708,7 +730,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in GET_VORTICITY_AND_DIVERGENCE_FROM_VELOCITIES!'
+            error stop 'uninitialized object in GET_VORTICITY_AND_DIVERGENCE_FROM_VELOCITIES!'
         end if
 
         ! Allocate arrays
@@ -771,7 +793,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
+            error stop 'uninitialized object in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
         end if
 
         if (isign2 /= 1 .and. isign2 /= -1) then
@@ -843,7 +865,7 @@ contains
         !--------------------------------------------------------------------------------
 
         if (.not. this%initialized) then
-            error stop 'uninitialized sphere object in GET_VECTOR_GRADIENT!'
+            error stop 'uninitialized object in GET_VECTOR_GRADIENT!'
         end if
 
         associate( &

@@ -417,23 +417,31 @@ contains
         end select
 
     end subroutine vpassm
-      !
-      !*****************************************************************************************
-      !
-    subroutine perform_preprocessing_step_for_fft99 (a, work, trigs, inc, jump, n, lot)
-        integer (ip), intent(in)    :: inc
-        integer (ip), intent(in)    ::jump
-        integer (ip), intent(in)    ::n
-        integer (ip), intent(in)    ::lot
-        real (wp),    intent(in)    :: trigs(:)
-        real (wp),    intent(in out) :: a(*)
-        real (wp),    intent(in out) ::work(*)
-
-        !     dimension a(n), work(n), trigs(n)
+    !
+    !*****************************************************************************************
+    !
+    subroutine perform_preprocessing_step_for_fft99(a, work, trigs, inc, jump, n, lot)
         !
-        !     subroutine fft99a - preprocessing step for fft99, isign=+1
-        !     (spectral to gridpoint transform)
-
+        ! Purpose:
+        !
+        ! Preprocessing step for fft99, isign=+1
+        ! ( spectral to gridpoint transform)
+        !
+        !  Arguments:     dimension a(n), work(n), trigs(n)
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        real (wp),    intent(in out) :: a(*)
+        real (wp),    intent(in out) :: work(*)
+        real (wp),    intent(in)     :: trigs(:)
+        integer (ip), intent(in)    :: inc
+        integer (ip), intent(in)    :: jump
+        integer (ip), intent(in)     :: n
+        integer (ip), intent(in)     :: lot
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip) :: nh
         integer (ip) :: nx
         integer (ip) :: ink
@@ -447,8 +455,9 @@ contains
         integer (ip) :: ibbase
         integer (ip) :: jabase
         integer (ip) :: jbbase
-        real (wp) :: c
-        real (wp) :: s
+        real (wp)    :: c
+        real (wp)    :: s
+        !--------------------------------------------------------------------------------
 
         nh=n/2
         nx=n+1
@@ -518,19 +527,27 @@ contains
         !*****************************************************************************************
         !
     subroutine perform_postprocessing_step_for_fft99(work, a, trigs, inc, jump, n, lot)
-        integer (ip), intent(in)    :: inc
-        integer (ip), intent(in)    ::jump
-        integer (ip), intent(in)    ::n
-        integer (ip), intent(in)    ::lot
-        real (wp),    intent(in)    :: trigs(:)
-        real (wp),    intent(in out) :: a(*)
-        real (wp),    intent(in out) ::work(*)
-
-        !     dimension work(n), a(n), trigs(n)
         !
-        !     subroutine fft99b - postprocessing step for fft99, isign=-1
-        !     (gridpoint to spectral transform)
-
+        ! Purpose:
+        !
+        ! {Postprocessing step for fft99, isign=-1
+        ! (gridpoint to spectral transform)
+        !
+        ! Arguments: dimension work(n), a(n), trigs(n)
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        real (wp),    intent(in out) :: work(*)
+        real (wp),    intent(in out) :: a(*)
+        real (wp),    intent(in)     :: trigs(:)
+        integer (ip), intent(in)     :: inc
+        integer (ip), intent(in)     :: jump
+        integer (ip), intent(in)     :: n
+        integer (ip), intent(in)     :: lot
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip) :: nh
         integer (ip) :: nx
         integer (ip) :: ink
@@ -544,9 +561,10 @@ contains
         integer (ip) :: ibbase
         integer (ip) :: jabase
         integer (ip) :: jbbase
-        real (wp) :: scale_constant
-        real (wp) :: c
-        real (wp) :: s
+        real (wp)    :: scale_constant
+        real (wp)    :: c
+        real (wp)    :: s
+        !--------------------------------------------------------------------------------
 
         nh=n/2
         nx=n+1
@@ -621,50 +639,78 @@ contains
     !*****************************************************************************************
     !
     subroutine initialize_fft99 (trigs, ifax, n)
-        integer (ip), intent(in)  :: n
-        integer (ip), intent(out) :: ifax(:)
-        real (wp),    intent(out) :: trigs(:)
-
-        !     dimension ifax(13), trigs(1)
         !
-        ! mode 3 is used for real/half-complex transforms.  it is possible
+        ! Arguments:   dimension ifax(13), trigs(1)
+        !
+        ! Remark:
+        !
+        ! Magic constant MODE=3 is used for real/half-complex transforms. It is possible
         ! to do complex/complex transforms with other values of mode, but
         ! documentation of the details were not available when this routine
         ! was written.
         !
-        integer (ip) :: mode = 3
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        integer (ip), intent(in)  :: n
+        integer (ip), intent(out) :: ifax(:)
+        real (wp),    intent(out) :: trigs(:)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
         integer (ip) :: i
+        !--------------------------------------------------------------------------------
 
-        call fax (ifax, n, mode)
-        i = ifax(1)
-        if (ifax(i+1) > 5 .or. n <= 4) ifax(1) = -99
-        if (ifax(1) <= 0 ) then
-            error stop ' initialize_fft99 -- invalid n'
-        end if
-        call fftrig (trigs, n, mode)
+        associate( MODE => 3 )
+
+            call fax (ifax, n, MODE )
+
+            i = ifax(1)
+
+            if (ifax(i+1) > 5 .or. n <= 4) then
+                ifax(1) = -99
+            end if
+
+            if (ifax(1) <= 0 ) then
+                error stop ' initialize_fft99 -- invalid n'
+            end if
+            call fftrig (trigs, n, MODE)
+
+        end associate
 
     end subroutine initialize_fft99
     !
     !*****************************************************************************************
     !
     subroutine fftrig (trigs, n, mode)
+        !
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
         real (wp),    intent(out) :: trigs(:)
         integer (ip), intent(in)  :: n
         integer (ip), intent(in)  :: mode
-
-        real (wp) :: del
-        real (wp) :: angle
+        !--------------------------------------------------------------------------------
+        ! Dictionary: local variables
+        !--------------------------------------------------------------------------------
+        real (wp)             :: del
+        real (wp)             :: angle
         real (wp), parameter :: PI = acos( -1.0_wp )
-        integer (ip) :: imode
-        integer (ip) :: nn
-        integer (ip) :: nh
-        integer (ip) :: i
-        integer (ip) :: l
-        integer (ip) :: la
+        integer (ip)          :: imode
+        integer (ip)          :: nn
+        integer (ip)          :: nh
+        integer (ip)          :: i
+        integer (ip)          :: l
+        integer (ip)          :: la
+        !--------------------------------------------------------------------------------
 
         imode=iabs(mode)
         nn=n
-        if (imode>1.and.imode<6) nn=n/2
+
+        if (imode>1.and.imode<6) then
+            nn=n/2
+        end if
+
         del=(2.0_wp * PI)/real(nn, kind=wp)
         l=nn+nn
         do i=1, l, 2

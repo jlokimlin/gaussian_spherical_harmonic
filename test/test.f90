@@ -164,7 +164,6 @@ contains
         write( stdout, '(A, I11)') 'Number of gaussian latitudes = ', NLAT
         write( stdout, '(A)') ' '
 
-
         ! Set constants
         MAXIMUM_NUMBER_OF_TIME_ITERATIONS = nint( 864.0e+2_wp * 5.0_wp/DT, kind=ip)
         MPRINT = MAXIMUM_NUMBER_OF_TIME_ITERATIONS/10
