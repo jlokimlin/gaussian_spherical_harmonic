@@ -1,10 +1,10 @@
 # *gaussian_spherical_harmonic*
  
-*gaussian\_spherical\_harmonic* is a library of modern Fortran software that can be used to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
+A library of modern Fortran software that can be used to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
 
 The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+).
 
-The main **GausianSphericalHarmonic** object now encapsulates type-bound procedures and all previous instances of pointers are now replaced with allocatable arrays to circumvent potential memory leaks.
+The main **GausianSphericalHarmonic** object now encapsulates the previous subroutines as type-bound procedures and all previous instances of pointers are now replaced with allocatable arrays to circumvent potential memory leaks.
 
 -----------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ The main **GausianSphericalHarmonic** object now encapsulates type-bound procedu
     integer (ip), parameter          :: NTRUNC = 62
     real (wp),    parameter          :: RSPHERE = 6.3712e+6_wp
     
-    call sphere%create( NLON, NLAT, NTRUNC, RSPHERE )
+    call call sphere%create( NLON, NLAT, NTRUNC, RSPHERE )
 
 ```
 
@@ -75,41 +75,41 @@ By creating multiple instances of **GausianSphericalHarmonic**, spherical harmon
 
 ```fortran
 
-     sphere%create( nlon, nlat, ntrunc, re ) 
+     call sphere%create( nlon, nlat, ntrunc, re ) 
 ```
 
 Initializes an object instance of **GausianSphericalHarmonic**. Inputs are ```nlon``` (number of unique longitudes), ```nlat``` (number of gaussian latitudes), and ```re``` (radius of sphere in meters). Must be called before anything else.
     
 ```fortran
 
-    sphere%destroy():
+    call sphere%destroy():
 ```
 Cleans up allocatable arrays allocated by *create*.
  
 ```fortran
     
-    sphere%perform_spherical_harmonic_transform( ugrid, anm, idir )
+    call sphere%perform_spherical_harmonic_transform( ugrid, anm, idir )
 ```
 
 Spherical harmonic transform (forward, i.e. grid to spectral, for ```idir=1``` and backward for ```idir=-1```). Arguments are gridded data ```ugrid```, complex spectral coefficients ```anm```, and flag specifying direction of transform (```idir```).  See **Import Details** below for information about indexing of grid and spectral arrays.
 
 ```fortran
     
-     sphere%get_latitudes_and_gaussian_weights( gaulats, weights )
+     call sphere%get_latitudes_and_gaussian_weights( gaulats, weights )
 ```
 
 Computes ```sin(gaussian latitudes)``` and ```gaussian weights```. Number of latitudes determined by size of input arrays.
 
 ```fortran
     
-    sphere%compute_associated_legendre_functions( x, pnm, hnm )
+    call sphere%compute_associated_legendre_functions( x, pnm, hnm )
 ```
     
 Computes associated legendre functions ```pnm``` and their derivates ```hnm = (X**2-1)*(dpnm/dx)```at ```x = sin(latitude)```. The input arrays pnm and hnm should have dimension ```(ntrunc+1)*(ntrunc+2)/2,``` where ```ntrunc``` is triangular truncation limit (see **Import Details** below for a description of the spectral indexing).
 
 ```fortran
     
-    sphere%get_velocities_from_vorticity_and_divergence( vrtnm, divnm, ug, vg )
+    call sphere%get_velocities_from_vorticity_and_divergence( vrtnm, divnm, ug, vg )
 ```
     
 Computes U,V (```u*cos(lat), v*cos(lat)``` on grid) from spectral coefficients of vorticity and divergence.
@@ -118,14 +118,14 @@ Output: gridded U,V ```(ug,vg)```.
 
 ```fortran
     
-    sphere%get_vorticity_and_divergence_from_velocities( vrtnm, divnm, ug, vg )
+    call sphere%get_vorticity_and_divergence_from_velocities( vrtnm, divnm, ug, vg )
 ```
     
 Computes spectral coefficients of vorticity and divergence ```vrtnm```,```divnm``` from gridded U,V ```(ug,vg)```.
 
 ```fortran
     
-    sphere%get_vector_gradient( chinm, uchig, vchig )
+    call sphere%get_vector_gradient( chinm, uchig, vchig )
 ```
     
 Compute ```cos(lat)*vector``` gradient.
@@ -134,7 +134,7 @@ Outputs: longitudinal and latitudinal components of gradient on the gaussian gri
 
 ```fortran
     
-    sphere%perform_isotropic_spectral_smoothing( datagrid, smooth )
+    call sphere%perform_isotropic_spectral_smoothing( datagrid, smooth )
 ```
     
 Isotropic spectral smoothing.
@@ -143,15 +143,15 @@ Outputs: ```datagrid``` (smoothed gridded data).
 
 ```fortran
 
-    sphere%get_complex_spherical_harmonic_coefficients( am, bm, anm, isign1, isign2 )
+    call sphere%get_complex_spherical_harmonic_coefficients( am, bm, anm, isign1, isign2 )
 ```
     
 Given the arrays of fourier coeffs, ```am``` and ```bm```, computes the complex spherical harmonic coeffs ```anm``` of:
  ```isign1*( (1./rsphere*(1.-x**2))*d(ag)/d(lon) + (isign2/rsphere)*d(bg)/dx )``` where ```ag``` and ```bg``` are the grid point counterparts of ```am```, ```bm,``` ```isign1```, ```isign2``` are +1 or -1, ```rsphere``` is radius of sphere, ```x=sin(lat)```) ```am```, ```bm``` can be computed from gridded data ```(ag,bg)``` using *perform\_multiple\_real\_fft*.
 
- ```fortran
-    
-    sphere%perform_multiple_real_fft( data, coeff, idir )
+```fortran
+
+    call sphere%perform_multiple_real_fft( data, coeff, idir )
  ```
         
 Computes fourier harmonics in zonal direction of a gridded array.  ```idir=+1 ``` for forward (grid to fourier) and -1 for backward (fourier to grid) transform.  ```data(nlon,nlat) ``` contains gridded data,  ```coeff(ntrunc+1,nlat) ``` contains complex zonal fourier harmonics.
