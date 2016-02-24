@@ -28,7 +28,7 @@ The main **GausianSphericalHarmonic** object now encapsulates the previous subro
     integer (ip), parameter          :: NTRUNC = 62
     real (wp),    parameter          :: RSPHERE = 6.3712e+6_wp
     
-    call call sphere%create( NLON, NLAT, NTRUNC, RSPHERE )
+    call sphere%create( NLON, NLAT, NTRUNC, RSPHERE )
 
 ```
 
@@ -152,7 +152,7 @@ Given the arrays of fourier coeffs, ```am``` and ```bm```, computes the complex 
 ```fortran
 
     call sphere%perform_multiple_real_fft( data, coeff, idir )
- ```
+```
         
 Computes fourier harmonics in zonal direction of a gridded array.  ```idir=+1 ``` for forward (grid to fourier) and -1 for backward (fourier to grid) transform.  ```data(nlon,nlat) ``` contains gridded data,  ```coeff(ntrunc+1,nlat) ``` contains complex zonal fourier harmonics.
 
