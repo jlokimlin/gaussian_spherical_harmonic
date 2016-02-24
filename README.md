@@ -6,6 +6,23 @@ The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in For
 
 -----------------------------------------------------------------------------
 
+## Requirements
+* The GNU Make tool https://www.gnu.org/software/make/
+* The GNU gfortran compiler https://gcc.gnu.org/wiki/GFortran
+
+-----------------------------------------------------------------------------
+
+## To build the project
+
+Type the following command line arguments
+```
+git clone https://github.com/jlokimlin/gaussian_spherical_harmonic.git
+
+cd gaussian_spherical_harmonic; make all
+```
+
+-----------------------------------------------------------------------------
+
 ## Usage
 
 ```fortran
