@@ -1,10 +1,10 @@
-# Gaussian Spherical Harmonic
+# *gaussian_spherical_harmonic*
  
 *gaussian\_spherical\_harmonic* is a library of modern Fortran software that can be used to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
 
-The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran
+The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+).
 
-The main **GausianSphericalHarmonic** object now encapsulates type-bound procedures and all previous instances of allocatables are now replaced with allocatable arrays to circumvent potential memory leaks
+The main **GausianSphericalHarmonic** object now encapsulates type-bound procedures and all previous instances of pointers are now replaced with allocatable arrays to circumvent potential memory leaks.
 
 -----------------------------------------------------------------------------
 
@@ -26,13 +26,13 @@ The main **GausianSphericalHarmonic** object now encapsulates type-bound procedu
     integer (ip), parameter          :: NLON = 192
     integer (ip), parameter          :: NLAT = NLON/2
     integer (ip), parameter          :: NTRUNC = 62
-    real (wp),    parameter          :: RSPHERE = 6.3712e6_wp
+    real (wp),    parameter          :: RSPHERE = 6.3712e+6_wp
     
     call sphere%create( NLON, NLAT, NTRUNC, RSPHERE )
 
 ```
 
-By creating multiple instances of *GausianSphericalHarmonic*, spherical harmonic transforms on multiple grids can be done easily in the same code.
+By creating multiple instances of **GausianSphericalHarmonic**, spherical harmonic transforms on multiple grids can be done easily in the same code.
 
 -----------------------------------------------------------------------------
 
@@ -48,19 +48,19 @@ By creating multiple instances of *GausianSphericalHarmonic*, spherical harmonic
  
 **associated\_legendre\_functions** (real allocatable array dimension ```((ntrunc+1)*(ntrunc+2)/2, nlat)``` ) - Associated legendre polynomials.
  
- **legendre\_derivative\_quantity** (real allocatable array, same size as *associated_legendre_functions*) = ```(-(1 - x^2) \frac{dp_{nm}}{dx}```
- at ```x = \sin(\theta).```
+ **legendre\_derivative\_quantity** (real allocatable array, same size as *associated_legendre_functions*) = ```(-(1 - x**2)) (pnm/dx)```
+ at ```x = sin(theta).```
  
- **gaussian\_latitudes** (real allocatable array dimension ```nlat```) - ```sin(\theta).```
+ **gaussian\_latitudes** (real allocatable array dimension ```nlat```) - ```sin(theta).```
  
  **gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights.
  
- **scaled\_gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights divided by ```Re(1-x^2)```.
+ **scaled\_gaussian\_weights** (real allocatable array dimension ```nlat```) - gaussian weights divided by ```Re(1-x**2)```.
  
- **ORDER_M** (integer allocatable array dimension (```(ntrunc+1)(ntrunc+2)/2```) - value of
+ **INDEX_ORDER_M** (integer allocatable array dimension (```(ntrunc+1)(ntrunc+2)/2```) - value of
  zonal wavenumber ```m``` corresponding to spectral array index ```nm=1,(ntrunc+1)*(ntrunc+2)/2)```
  
- **DEGREE_N** (integer allocatable array same size as *ORDER_M*) - value of spherical harmonic degree ```n``` corresponding to spectral array index ```nm = 1,(ntrunc+1)*(ntrunc+2)/2)```
+ **INDEX_DEGREE_N** (integer allocatable array same size as *INDEX_ORDER_M*) - value of spherical harmonic degree ```n``` corresponding to spectral array index ```nm = 1,(ntrunc+1)*(ntrunc+2)/2)```
  
  **laplacian** (real allocatable array dimension (```ntrunc+1)*(ntrunc+2)/2``` ) - lapacian operator in spectral space = ```-n(n+1)/Re**2```, where ```n``` is degree of spherical harmonic.
  
@@ -78,7 +78,7 @@ By creating multiple instances of *GausianSphericalHarmonic*, spherical harmonic
      sphere%create( nlon, nlat, ntrunc, re ) 
 ```
 
-Initializes an object instance (*sphere* - derived data type *GausianSphericalHarmonic*,). Inputs are *nlon* (number of unique longitudes), *nlat* (number of gaussian latitudes), and *re* (radius of sphere in meters). Must be called before anything else.
+Initializes an object instance of **GausianSphericalHarmonic**. Inputs are *nlon* (number of unique longitudes), *nlat* (number of gaussian latitudes), and *re* (radius of sphere in meters). Must be called before anything else.
     
 ```fortran
 
@@ -171,8 +171,8 @@ Computes fourier harmonics in zonal direction of a gridded array.  ```idir=+1 ``
 
 ```fortran
     
-    ORDER_M = [ ((m,n=m,mtrunc),m=0,mtrunc) ]
-    DEGREE_N = [ ((n,n=m,mtrunc),m=0,mtrunc) ]
+    INDEX_ORDER_M = [ ((m,n=m,mtrunc),m=0,mtrunc) ]
+    INDEX_DEGREE_N = [ ((n,n=m,mtrunc),m=0,mtrunc) ]
 ```
 
  Conversely, the index nm as a function of m and n is:
