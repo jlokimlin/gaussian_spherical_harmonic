@@ -23,8 +23,8 @@ module type_GaussianSphericalHarmonic
         integer (ip),              public  :: NUMBER_OF_LONGITUDES = 0
         integer (ip),              public  :: NUMBER_OF_LATITUDES = 0
         integer (ip),              public  :: TRIANGULAR_TRUNCATION_LIMIT = 0
-        integer (ip), allocatable, private :: indxm(:)
-        integer (ip), allocatable, private :: indxn(:)
+        integer (ip), allocatable, private :: INDEX_ORDER_M(:)
+        integer (ip), allocatable, private :: INDEX_DEGREE_N(:)
         integer (ip), allocatable, private :: ifax(:)
         real (wp),                 public  :: RADIUS_OF_SPHERE = 0.0_wp
         real (wp), allocatable,    private :: trigonometric_functions(:)
@@ -98,8 +98,8 @@ contains
             allocate(this%scaled_gaussian_weights(nlat))
             allocate(this%gaussian_latitudes(nlat))
             allocate(this%gaussian_weights(nlat))
-            allocate(this%indxm(nmdim))
-            allocate(this%indxn(nmdim))
+            allocate(this%INDEX_ORDER_M(nmdim))
+            allocate(this%INDEX_DEGREE_N(nmdim))
             allocate(this%laplacian(nmdim))
             allocate(this%inverse_laplacian(nmdim))
             allocate(this%associated_legendre_functions(nmdim, nlat))
@@ -111,8 +111,8 @@ contains
                 gaulats => this%gaussian_latitudes, &
                 weights => this%gaussian_weights, &
                 gwrc => this%scaled_gaussian_weights, &
-                indxm => this%indxm, &
-                indxn => this%indxn, &
+                indxm => this%INDEX_ORDER_M, &
+                indxn => this%INDEX_DEGREE_N, &
                 lap => this%laplacian, &
                 ilap => this%inverse_laplacian, &
                 pnm => this%associated_legendre_functions, &
@@ -164,8 +164,8 @@ contains
         if (allocated(this%scaled_gaussian_weights)) deallocate(this%scaled_gaussian_weights)
         if (allocated(this%associated_legendre_functions)) deallocate(this%associated_legendre_functions)
         if (allocated(this%legendre_derivative_quantity)) deallocate(this%legendre_derivative_quantity)
-        if (allocated(this%indxm)) deallocate(this%indxm)
-        if (allocated(this%indxn)) deallocate(this%indxn)
+        if (allocated(this%INDEX_ORDER_M)) deallocate(this%INDEX_ORDER_M)
+        if (allocated(this%INDEX_DEGREE_N)) deallocate(this%INDEX_DEGREE_N)
         if (allocated(this%laplacian )) deallocate(this%laplacian)
         if (allocated(this%inverse_laplacian)) deallocate(this%inverse_laplacian)
         if (allocated(this%trigonometric_functions)) deallocate(this%trigonometric_functions)
@@ -943,7 +943,7 @@ contains
         associate( &
             ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
             nmdim  => (this%TRIANGULAR_TRUNCATION_LIMIT+1)*(this%TRIANGULAR_TRUNCATION_LIMIT+2)/2, &
-            indxn  => this%indxn &
+            indxn  => this%INDEX_DEGREE_N &
             )
 
             allocate( dataspec((ntrunc+1)*(ntrunc+2)/2) )
