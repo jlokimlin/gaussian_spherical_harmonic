@@ -71,6 +71,8 @@ By creating multiple instances of **GausianSphericalHarmonic**, spherical harmon
  
  **initialized** (logical) - true if instance of object has been initialized by call to create, false if not initialized.
 
+-----------------------------------------------------------------------------
+
 ### Class methods, i.e., type-bound procedures are:
 
 ```fortran
@@ -155,6 +157,8 @@ Given the arrays of fourier coeffs, ```am``` and ```bm```, computes the complex 
 ```
         
 Computes fourier harmonics in zonal direction of a gridded array.  ```idir=+1 ``` for forward (grid to fourier) and -1 for backward (fourier to grid) transform.  ```data(nlon,nlat) ``` contains gridded data,  ```coeff(ntrunc+1,nlat) ``` contains complex zonal fourier harmonics.
+
+-----------------------------------------------------------------------------
 
 ### Important Details:
 
