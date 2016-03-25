@@ -1,8 +1,8 @@
 # **gaussian\_spherical\_harmonic**
  
-A object-oriented library in modern Fortran to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
+A object-oriented library in Fortran to perform spherical harmonic transforms on gaussian grids using triangular truncation. 
 
-The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+). More specifically, the former object-based **sphere** type, i.e., class was rebaptized as **GausianSphericalHarmonic**. This class now encapsulates all the relevant subroutines as type-bound procedures and all previous instances of pointers are replaced with allocatable arrays to circumvent potential memory leaks.
+The original work by Jeff Whitaker <Jeffrey.S.Whitaker@noaa.gov>; written in Fortran 95, was heavily refactored to incorporate features of modern Fortran (2008+). More specifically, the former object-based **sphere** type, is rebaptized as the fully object-oriented class **GausianSphericalHarmonic**. This class encapsulates all the relevant subroutines as type-bound procedures and all previous instances of pointers are replaced with allocatable arrays to circumvent potential memory leaks.
 
 -----------------------------------------------------------------------------
 
