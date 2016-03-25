@@ -51,7 +51,144 @@ By creating multiple instances of **GausianSphericalHarmonic**, spherical harmon
 
 -----------------------------------------------------------------------------
 
-### Class variables, i.e., type components are:
+
+## Results
+
+```
+		*** Test program for TYPE(GaussianSphericalHarmonic) ***
+		
+		Non-linear steady-state geostropic flow in a shallow water model
+		
+		Triangular trunction number  =          42
+		Number of gaussian latitudes =          65
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                       0 model time in  hours            0.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   1.297794E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    6.884086E-08
+		 l2 error in geopot.     3.012380E-09 maximum divergence      9.622449E-17
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                      72 model time in  hours           12.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   1.077176E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    1.111029E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      1.542544E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     144 model time in  hours           24.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   1.514993E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    1.418913E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      2.722109E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     216 model time in  hours           36.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   2.016065E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    1.694504E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      3.806707E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     288 model time in  hours           48.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   2.601369E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    1.927176E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      4.700744E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     360 model time in  hours           60.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   3.167848E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    2.146840E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      5.396183E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     432 model time in  hours           72.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   3.711835E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    2.347049E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      5.892684E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     504 model time in  hours           84.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   4.221550E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    2.539370E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      6.195340E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     576 model time in  hours           96.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   4.699382E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    2.717727E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      6.301328E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     648 model time in  hours          108.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   5.125485E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    2.890043E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      6.270651E-11
+		
+		
+		 steady nonlinear rotated flow:
+		 cycle number                     720 model time in  hours          120.00
+		 time step in seconds            600. number of latitudes               65
+		 number of longitudes             128 max wave number                   42
+		 rotation rate           7.292000E-05 mean height             2.940000E+04
+		 maximum velocity        4.000000E+01 tilt angle              6.000000E+01
+		 max error in velocity   5.517727E-07 max error in geopot.    2.061491E-08
+		 l2 error in velocity    3.043037E-07
+		 l2 error in geopot.     3.012380E-09 maximum divergence      5.983927E-11
+		
+		
+		This file was compiled by GCC version 5.3.1 
+```
+
+
+## Description of Class variables, i.e., type components are:
 
 **NUMBER\_OF\_LONGITUDES** (integer) - number of longitudinal points.
  

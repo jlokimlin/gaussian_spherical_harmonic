@@ -28,13 +28,13 @@ exec: $(OBJ)
 	$(FC) $(FFLAGS) -o $(EXECUTABLE) $(OBJS) $(LINKS)
 
 lib: 
-	ar rc libgaussian_spherical_harmonic.a $(OBJ_DIRECTORY)/*.o
-	mv libgaussian_spherical_harmonic.a $(LIB_DIRECTORY)
+	$(AR) rc lib$(LIB_NAME).a $(OBJS)
+	mv lib$(LIB_NAME).a $(LIB_DIRECTORY)
 
 all:
-	make clean
-	make exec; $(EXECUTABLE)
-	make lib
+	$(MAKE) clean
+	$(MAKE) exec; $(EXECUTABLE)
+	$(MAKE) lib
 
 clean:
 	rm -f $(OBJS) $(LIB) $(LIB_DIRECTORY)/*.mod

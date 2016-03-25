@@ -15,10 +15,9 @@ module module_fast_fourier_transform
 
 
 contains
-    !
-    !*****************************************************************************************
-    !
-    subroutine vpassm (a, b, c, d, trigs, inc1, inc2, inc3, inc4, lot, n, ifac, la)
+
+
+    subroutine vpassm(a, b, c, d, trigs, inc1, inc2, inc3, inc4, lot, n, ifac, la)
         !
         !
         !     Purpose:
@@ -418,7 +417,7 @@ contains
 
     end subroutine vpassm
     !
-    !*****************************************************************************************
+
     !
     subroutine perform_preprocessing_step_for_fft99(a, work, trigs, inc, jump, n, lot)
         !
@@ -524,7 +523,7 @@ contains
 
     end subroutine perform_preprocessing_step_for_fft99
         !
-        !*****************************************************************************************
+    
         !
     subroutine perform_postprocessing_step_for_fft99(work, a, trigs, inc, jump, n, lot)
         !
@@ -636,7 +635,7 @@ contains
 
     end subroutine perform_postprocessing_step_for_fft99
     !
-    !*****************************************************************************************
+
     !
     subroutine initialize_fft99 (trigs, ifax, n)
         !
@@ -680,7 +679,7 @@ contains
 
     end subroutine initialize_fft99
     !
-    !*****************************************************************************************
+
     !
     subroutine fftrig (trigs, n, mode)
         !
@@ -750,7 +749,7 @@ contains
 
     end subroutine fftrig
     !
-    !*****************************************************************************************
+
     !
     subroutine fax (ifax, n, mode)
         integer (ip), intent(out) :: ifax(:)

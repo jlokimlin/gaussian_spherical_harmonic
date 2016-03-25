@@ -1,9 +1,8 @@
 module type_GaussianSphericalHarmonic
 
     use, intrinsic :: iso_fortran_env, only: &
-        wp     => REAL64, &
-        ip     => INT32, &
-        stderr => ERROR_UNIT
+        wp => REAL64, &
+        ip => INT32
 
     use module_fast_fourier_transform, only: &
         perform_fft991, &
@@ -33,9 +32,9 @@ module type_GaussianSphericalHarmonic
         real (wp), allocatable,    private :: scaled_gaussian_weights(:)
         real (wp), allocatable,    public  :: laplacian(:)
         real (wp), allocatable,    private :: inverse_laplacian(:)
-        real (wp), allocatable,    private :: associated_legendre_functions(:, :)
-        real (wp), allocatable,    private :: legendre_derivative_quantity(:, :)
-        logical,                    private :: initialized = .false.
+        real (wp), allocatable,    private :: associated_legendre_functions(:,:)
+        real (wp), allocatable,    private :: legendre_derivative_quantity(:,:)
+        logical,                   private :: initialized = .false.
         !---------------------------------------------------------------------------------
     contains
         !---------------------------------------------------------------------------------
@@ -52,20 +51,14 @@ module type_GaussianSphericalHarmonic
         procedure, public         :: get_complex_spherical_harmonic_coefficients
         procedure, nopass, public :: get_latitudes_and_gaussian_weights
         procedure, nopass, public :: compute_associated_legendre_functions
-        final                       :: finalize_gaussian_spherical_harmonic
+        final                     :: finalize_gaussian_spherical_harmonic
         !---------------------------------------------------------------------------------
     end type GaussianSphericalHarmonic
 
 contains
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine initialize_gaussian_spherical_harmonic(this, nlon, nlat, ntrunc, re)
-        !
-        ! Purpose:
-        !
-        ! To initialize an GaussianSphericalHarmonic object
-        !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
@@ -91,10 +84,7 @@ contains
 
         associate( nmdim => (ntrunc+1)*(ntrunc+2)/2 )
 
-            !--------------------------------------------------------------------------------
-            ! Allocate arrays
-            !--------------------------------------------------------------------------------
-
+            ! Allocate memory
             allocate(this%scaled_gaussian_weights(nlat))
             allocate(this%gaussian_latitudes(nlat))
             allocate(this%gaussian_weights(nlat))
@@ -107,6 +97,7 @@ contains
             allocate(this%trigonometric_functions((3*nlon/2)+1))
             allocate(this%ifax(13))
 
+            ! Fill arrays
             associate( &
                 gaulats => this%gaussian_latitudes, &
                 weights => this%gaussian_weights, &
@@ -120,13 +111,17 @@ contains
                 trigs => this%trigonometric_functions, &
                 ifax => this%ifax &
                 )
-
+                ! Compute latitudes and gaussian weights
                 call get_latitudes_and_gaussian_weights( gaulats, weights )
 
                 gwrc = weights/(re * (1.0_wp - (gaulats**2)))
+                ! Set order m
                 indxm = [ ((m, n = m, ntrunc), m = 0, ntrunc) ]
+                ! Set degree n
                 indxn = [ ((n, n = m, ntrunc), m = 0, ntrunc) ]
+                ! Set laplacian coefficients
                 lap = -real(indxn, kind=wp) * real(indxn + 1, kind=wp) / (re**2)
+                ! Set inverse laplacian coefficients
                 ilap(1) = 0.0_wp
                 ilap(2:nmdim) = 1.0_wp/lap(2:nmdim)
 
@@ -134,6 +129,7 @@ contains
                     call compute_associated_legendre_functions( gaulats(j), pnm(:, j), hnm(:, j) )
                 end do
 
+                ! Initialize fast Fourier transform
                 call initialize_fft99( trigs, ifax, nlon)
 
             end associate
@@ -142,23 +138,20 @@ contains
         this%initialized = .true.
 
     end subroutine initialize_gaussian_spherical_harmonic
-    !
-    !*****************************************************************************************
-    !
+
+
+
     subroutine destroy_gaussian_spherical_harmonic(this)
-        !
-        ! Purpose:
-        !
-        ! Deallocate allocatables in object.
-        !
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in out) :: this
         !--------------------------------------------------------------------------------
 
-        if (.not. this%initialized) return
+        ! Check flag
+        if (this%initialized .eqv. .false. ) return
 
+        ! Release memory
         if (allocated(this%gaussian_latitudes)) deallocate(this%gaussian_latitudes)
         if (allocated(this%gaussian_weights)) deallocate(this%gaussian_weights)
         if (allocated(this%scaled_gaussian_weights)) deallocate(this%scaled_gaussian_weights)
@@ -171,30 +164,12 @@ contains
         if (allocated(this%trigonometric_functions)) deallocate(this%trigonometric_functions)
         if (allocated(this%ifax)) deallocate(this%ifax)
 
+        ! Reset flag
         this%initialized = .false.
 
     end subroutine destroy_gaussian_spherical_harmonic
-    !
-    !*****************************************************************************************
-    !
-    subroutine finalize_gaussian_spherical_harmonic(this)
-        !
-        ! Purpose:
-        !
-        ! Deallocate allocatables in object.
-        !
-        !--------------------------------------------------------------------------------
-        ! Dictionary: calling arguments
-        !--------------------------------------------------------------------------------
-        type (GaussianSphericalHarmonic), intent(in out) :: this
-        !--------------------------------------------------------------------------------
 
-        call this%destroy()
 
-    end subroutine finalize_gaussian_spherical_harmonic
-    !
-    !*****************************************************************************************
-    !
     subroutine get_latitudes_and_gaussian_weights(sinlats, wts)
         !
         ! Purpose:
@@ -212,17 +187,16 @@ contains
         !--------------------------------------------------------------------------------
         integer (ip) :: i, j !! Counters
         integer (ip) :: iteration_counter
-        real (wp)    :: pp
-        real (wp)    :: p1
-        real (wp)    :: p2
-        real (wp)    :: p3
-        real (wp)    :: z
-        real (wp)    :: z1
+        real (wp)    :: pp,  p1, p2, p3
+        real (wp)    :: z, z1
         logical      :: success = .false.
         !--------------------------------------------------------------------------------
 
+        ! Check validity of calling arguments
         if (size(sinlats) /= size(wts)) then
-            error stop 'sinlats and wts must be same size in gaulw!'
+            error stop 'TYPE(GaussianSphericalHarmonic: '&
+                // 'Calling arguemnts sinlats and wts must be same size '&
+                //'in COMPUTE_LATITUDES_AND_GAUSSIAN_WEIGHTS'
         end if
 
         ! Initialize convergence flag
@@ -230,11 +204,10 @@ contains
 
         associate( &
             MAXIMUM_NUMBER_OF_ITERATIONS => 10, &
-            pi                          => acos(-1.0_wp), &
-            nlat                        => size(sinlats), &
-            TOLERANCE                   => 0.1_wp**(precision(10.0_wp * epsilon(10.0_wp))) &
+            pi => acos(-1.0_wp), &
+            nlat => size(sinlats), &
+            TOLERANCE => 0.1_wp**(precision(10.0_wp * epsilon(10.0_wp))) &
             )
-
 
             do i=1, nlat
                 z = cos(pi*(real(i, kind=wp) - 0.25_wp)/(real(nlat, kind=wp) + 0.5_wp))
@@ -266,13 +239,14 @@ contains
         end associate
 
         if ( .not. success ) then
-            error stop 'abscissas failed to converge in COMPUTE_LATITUDES_AND_GAUSSIAN_WEIGHTS'
+            error stop 'TYPE(GaussianSphericalHarmonic: '&
+                //'abscissas failed to converge '&
+                //'in COMPUTE_LATITUDES_AND_GAUSSIAN_WEIGHTS'
         end if
 
     end subroutine get_latitudes_and_gaussian_weights
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine compute_associated_legendre_functions(x, pmn, hmn)
         !
         ! Purpose:
@@ -323,8 +297,8 @@ contains
         !**** set parameters for entry into the recursive formulae.
 
         sinsq = 1.0_wp - x * x
-        a     = 1.0_wp
-        b     = 0.0_wp
+        a = 1.0_wp
+        b = 0.0_wp
         prod  = 1.0_wp
 
         associate( &
@@ -348,8 +322,8 @@ contains
                 !        generated.
 
                 if (m /= 0) then
-                    a    = a + 2.0_wp
-                    b    = b + 2.0_wp
+                    a = a + 2.0_wp
+                    b = b + 2.0_wp
                     prod = prod * sinsq * a / b
                 end if
 
@@ -396,13 +370,11 @@ contains
                 end do
                 nmstrt = nmstrt + nmax
             end do
-
         end associate
 
     end subroutine compute_associated_legendre_functions
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine perform_multiple_real_fft( this, data, coeff, idir)
         !
         ! Purpose:
@@ -413,8 +385,8 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: data(:, :)
-        complex (wp),                      intent(in out) :: coeff(:, :)
+        real (wp),                         intent(in out) :: data(:,:)
+        complex (wp),                      intent(in out) :: coeff(:,:)
         integer (ip),                      intent(in)     :: idir
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
@@ -424,31 +396,26 @@ contains
         integer (ip)            :: i, j, m, n !! Counters
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in perform_multiple_real_fft!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in PERFORM_MULTIPLE_REAL_FFT'
         end if
 
         if ( this%TRIANGULAR_TRUNCATION_LIMIT > this%NUMBER_OF_LONGITUDES/2) then
             error stop 'ntrunc must be less than or equal to nlons in perform_multiple_real_fft'
         end if
 
-        !--------------------------------------------------------------------------------
         ! Perform transform
-        !--------------------------------------------------------------------------------
-
         associate( &
-            nlons  => this%NUMBER_OF_LONGITUDES, &
-            nlats  => this%NUMBER_OF_LATITUDES, &
+            nlons => this%NUMBER_OF_LONGITUDES, &
+            nlats => this%NUMBER_OF_LATITUDES, &
             ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
             mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
-            trigs  => this%trigonometric_functions, &
-            ifax   => this%ifax &
+            trigs => this%trigonometric_functions, &
+            ifax => this%ifax &
             )
-
-            !--------------------------------------------------------------------------------
-            ! Allocate arrays
-            !--------------------------------------------------------------------------------
-
+            ! Allocate memory
             allocate( input_output_data( nlats * (nlons + 2) ) )
             allocate( workspace( nlats * (nlons + 1) ) )
 
@@ -512,21 +479,20 @@ contains
                         end do
                     end do
                 case default
-                    error stop 'Calling argument idir must be +1 or -1 in perform_multiple_real_fft!'
+                    error stop 'TYPE(GaussianSphericalHarmonic): '&
+                        //'Calling argument idir must be -1 or +1'&
+                        //' in PERFORM_MULTIPLE_REAL_FFT'
             end select
         end associate
 
-        !--------------------------------------------------------------------------------
-        ! Free memory
-        !--------------------------------------------------------------------------------
-
+        ! Release memory
         deallocate( input_output_data )
         deallocate( workspace )
 
     end subroutine perform_multiple_real_fft
-    !
-    !*****************************************************************************************
-    !
+
+
+
     subroutine perform_spherical_harmonic_transform(this, ugrid, anm, idir)
 
         ! Purpose:
@@ -537,20 +503,22 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)      :: this
-        real (wp),                         intent (in out) :: ugrid(:, :)
+        real (wp),                         intent (in out) :: ugrid(:,:)
         complex (wp),                      intent (in out) :: anm(:)
         integer (ip),                      intent(in)      :: idir
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable  :: am(:, :)
+        complex (wp), allocatable  :: am(:,:)
         integer (ip)               :: nmstrt
         integer (ip)               :: nm !! index
         integer (ip)               :: m, n, j !! Counters
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in PERFORM_SPHERICAL_HARMONIC_TRANSFORM!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in PERFORM_SPHERICAL_HARMONIC_TRANSFORM'
         end if
 
         associate( &
@@ -615,16 +583,18 @@ contains
     		
                     call this%perform_multiple_real_fft( ugrid, am, -1)
                 case default
-                    error stop 'Calling argument idir must be -1 or +1!'
+                    error stop 'TYPE(GaussianSphericalHarmonic): '&
+                        //'Calling argument idir must be -1 or +1'&
+                        //' in PERFORM_SPHERICAL_HARMONIC_TRANSFORM'
             end select
         end associate
 
-        ! Free memory
+        ! Release memory
         deallocate( am )
 
     end subroutine perform_spherical_harmonic_transform
     !
-    !*****************************************************************************************
+
     !
     subroutine get_velocities_from_vorticity_and_divergence(this, vrtnm, divnm, ug, vg)
         !
@@ -637,36 +607,38 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)  :: this
-        real (wp),                         intent(out) :: ug(:, :)
-        real (wp),                         intent(out) :: vg(:, :)
+        real (wp),                         intent(out) :: ug(:,:)
+        real (wp),                         intent(out) :: vg(:,:)
         complex (wp),                      intent(in)  :: vrtnm(:)
         complex (wp),                      intent(in)  :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:, :)
-        complex (wp), allocatable :: vm(:, :)
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
         integer (ip)              :: n, m, j !! Counters
         integer (ip)              :: nm
         integer (ip)              :: nmstrt
         real (wp)                 :: rm
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in GET_VELOCITIES_FROM_VORTICITY_AND_DIVERGENCE!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in GET_VELOCITIES_FROM_VORTICITY_AND_DIVERGENCE'
         end if
 
         associate( &
             nlats  => this%NUMBER_OF_LATITUDES, &
             ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
             mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
-            ilap   => this%inverse_laplacian, &
-            re     => this%RADIUS_OF_SPHERE, &
-            pnm    => this%associated_legendre_functions, &
-            hnm    => this%legendre_derivative_quantity &
+            ilap => this%inverse_laplacian, &
+            re => this%RADIUS_OF_SPHERE, &
+            pnm => this%associated_legendre_functions, &
+            hnm => this%legendre_derivative_quantity &
             )
 
-            ! Allocate arrays
+            ! Allocate memory
             allocate( um(mwaves, nlats) )
             allocate( vm(mwaves, nlats) )
 
@@ -699,14 +671,14 @@ contains
         call this%perform_multiple_real_fft( ug, um, -1)
         call this%perform_multiple_real_fft( vg, vm, -1)
 
-        ! Free memory
+        ! Release memory
         deallocate( um )
         deallocate( vm )
 
     end subroutine get_velocities_from_vorticity_and_divergence
-    !
-    !*****************************************************************************************
-    !
+
+
+
     subroutine get_vorticity_and_divergence_from_velocities(this, vrtnm, divnm, ug, vg)
         !
         ! Purpose:
@@ -718,30 +690,30 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: ug(:, :)
-        real (wp),                         intent(in out) :: vg(:, :)
+        real (wp),                         intent(in out) :: ug(:,:)
+        real (wp),                         intent(in out) :: vg(:,:)
         complex (wp),                      intent(in)     :: vrtnm(:)
         complex (wp),                      intent(in)     :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:, :)
-        complex (wp), allocatable :: vm(:, :)
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in GET_VORTICITY_AND_DIVERGENCE_FROM_VELOCITIES!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in GET_VORTICITY_AND_DIVERGENCE_FROM_VELOCITIES'
         end if
 
-        ! Allocate arrays
+        ! Allocate memory
         associate( &
             mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
-            nlats  => this%NUMBER_OF_LATITUDES &
+            nlats => this%NUMBER_OF_LATITUDES &
             )
-
             allocate( um( mwaves, nlats ) )
             allocate( vm( mwaves, nlats ) )
-
         end associate
 
         call this%perform_multiple_real_fft( ug, um, 1)
@@ -750,14 +722,13 @@ contains
         call this%get_complex_spherical_harmonic_coefficients( um, vm, divnm, 1, 1)
         call this%get_complex_spherical_harmonic_coefficients( vm, um, vrtnm, 1, -1)
 
-        ! Free memory
+        ! Release memory
         deallocate( um )
         deallocate( vm )
 
     end subroutine get_vorticity_and_divergence_from_velocities
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine get_complex_spherical_harmonic_coefficients( this, &
         am, bm, anm, isign1, isign2 )
         !
@@ -780,9 +751,9 @@ contains
         class (GaussianSphericalHarmonic), intent(in) :: this
         integer (ip),                      intent(in) :: isign1
         integer (ip),                      intent(in) :: isign2
-        complex (wp)                                   :: anm(:)
-        complex (wp),                      intent(in) :: am(:, :)
-        complex (wp),                      intent(in) :: bm(:, :)
+        complex (wp)                                  :: anm(:)
+        complex (wp),                      intent(in) :: am(:,:)
+        complex (wp),                      intent(in) :: bm(:,:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
@@ -792,8 +763,10 @@ contains
         real (wp)    :: rm
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in GET_COMPLEX_SPHERICAL_HARMONIC_COEFFICIENTS'
         end if
 
         if (isign2 /= 1 .and. isign2 /= -1) then
@@ -832,13 +805,11 @@ contains
                     nmstrt = nmstrt + mwaves - m +1
                 end do
             end do
-
         end associate
 
     end subroutine get_complex_spherical_harmonic_coefficients
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine get_vector_gradient( this, divnm, ug, vg )
         !
         ! Purpose:
@@ -850,34 +821,36 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)  :: this
-        real (wp),                         intent(out) :: ug(:, :)
-        real (wp),                         intent(out) :: vg(:, :)
+        real (wp),                         intent(out) :: ug(:,:)
+        real (wp),                         intent(out) :: vg(:,:)
         complex (wp),                      intent(in)  :: divnm(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        complex (wp), allocatable :: um(:, :)
-        complex (wp), allocatable :: vm(:, :)
+        complex (wp), allocatable :: um(:,:)
+        complex (wp), allocatable :: vm(:,:)
         integer (ip)              :: n, m, j !! Counters
         integer (ip)              :: nm
         integer (ip)              :: nmstrt
         real (wp)                 :: rm
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in GET_VECTOR_GRADIENT!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in GET_VECTOR_GRADIENT'
         end if
 
         associate( &
             nlats  => this%NUMBER_OF_LATITUDES, &
             ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
             mwaves => this%TRIANGULAR_TRUNCATION_LIMIT + 1, &
-            re     => this%RADIUS_OF_SPHERE, &
-            pnm    => this%associated_legendre_functions, &
-            hnm    => this%legendre_derivative_quantity &
+            re => this%RADIUS_OF_SPHERE, &
+            pnm => this%associated_legendre_functions, &
+            hnm => this%legendre_derivative_quantity &
             )
 
-            ! Allocate arrays
+            ! Allocate memory
             allocate( um( mwaves, nlats ) )
             allocate( vm( mwaves, nlats ) )
 
@@ -900,20 +873,18 @@ contains
                     nmstrt = nmstrt + mwaves - m + 1
                 end do
             end do
-
         end associate
 
         call this%perform_multiple_real_fft( ug, um, -1)
         call this%perform_multiple_real_fft( vg, vm, -1)
 
-        ! Free memory
+        ! Release memory
         deallocate( um )
         deallocate( vm )
 
     end subroutine get_vector_gradient
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine perform_isotropic_spectral_smoothing(this, datagrid, smooth)
         !
         ! Purpose:
@@ -926,30 +897,32 @@ contains
         ! Dictionary: calling arguments
         !--------------------------------------------------------------------------------
         class (GaussianSphericalHarmonic), intent(in)     :: this
-        real (wp),                         intent(in out) :: datagrid(:, :)
+        real (wp),                         intent(in out) :: datagrid(:,:)
         real (wp),                         intent(in)     :: smooth(:)
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
         complex (wp), allocatable :: dataspec(:)
-        integer (ip)              :: n !! Counter
-        integer (ip)              ::nm !! Index
+        integer (ip)              :: nm, n !! Counters
         !--------------------------------------------------------------------------------
 
+        ! Check if object is usable
         if (.not. this%initialized) then
-            error stop 'uninitialized object in PERFORM_ISOTROPIC_SPECTRAL_SMOOTHING!'
+            error stop 'TYPE(GaussianSphericalHarmonic): '&
+                //'uninitialized object in PERFORM_ISOTROPIC_SPECTRAL_SMOOTHING'
         end if
 
         associate( &
             ntrunc => this%TRIANGULAR_TRUNCATION_LIMIT, &
-            nmdim  => (this%TRIANGULAR_TRUNCATION_LIMIT+1)*(this%TRIANGULAR_TRUNCATION_LIMIT+2)/2, &
-            indxn  => this%INDEX_DEGREE_N &
+            nmdim => (this%TRIANGULAR_TRUNCATION_LIMIT+1)*(this%TRIANGULAR_TRUNCATION_LIMIT+2)/2, &
+            indxn => this%INDEX_DEGREE_N &
             )
-
+            ! Allocate memory
             allocate( dataspec((ntrunc+1)*(ntrunc+2)/2) )
 
             call this%perform_spherical_harmonic_transform( datagrid, dataspec, 1)
 
+            ! Perform smoothing
             do nm =1, nmdim
                 n = indxn(nm)
                 dataspec(nm) = dataspec(nm)*smooth(n + 1)
@@ -959,11 +932,23 @@ contains
 
         end associate
 
-        ! Free memory
+        ! Release memory
         deallocate( dataspec )
 
     end subroutine perform_isotropic_spectral_smoothing
-    !
-    !*****************************************************************************************
-    !
+
+
+
+    subroutine finalize_gaussian_spherical_harmonic(this)
+        !--------------------------------------------------------------------------------
+        ! Dictionary: calling arguments
+        !--------------------------------------------------------------------------------
+        type (GaussianSphericalHarmonic), intent(in out) :: this
+        !--------------------------------------------------------------------------------
+
+        call this%destroy()
+
+    end subroutine finalize_gaussian_spherical_harmonic
+
+
 end module type_GaussianSphericalHarmonic

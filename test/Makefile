@@ -4,7 +4,7 @@ include ../make.inc
 MODULE_PATH = $(LIB_DIRECTORY)
 
 LINKS = \
--L$(LIB_DIRECTORY) -lgaussian_spherical_harmonic \
+-L$(LIB_DIRECTORY) -l$(LIB_NAME) \
 -I$(MODULE_PATH)
 
 EXECUTABLE = ./test.exe
@@ -18,9 +18,8 @@ exec: $(OBJ)
 	$(FC) $(FFLAGS) -o $(EXECUTABLE) $(OBJS) $(LINKS)
 
 run:
-	make clean
-	make exec; $(EXECUTABLE)
+	$(MAKE) clean
+	$(MAKE) exec; $(EXECUTABLE)
 	 
 clean:
-	rm -f $(OBJS)
-	rm -f $(EXECUTABLE)
+	rm -f $(OBJS) $(EXECUTABLE)

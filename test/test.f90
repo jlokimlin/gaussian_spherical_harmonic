@@ -1,9 +1,11 @@
 program test
 
     use, intrinsic :: iso_fortran_env, only: &
-        wp     => REAL64, &
-        ip     => INT32, &
-        stdout => OUTPUT_UNIT
+        wp => REAL64, &
+        ip => INT32, &
+        stdout => OUTPUT_UNIT, &
+        compiler_version, &
+        compiler_options
 
     use type_GaussianSphericalHarmonic, only: &
         GaussianSphericalHarmonic
@@ -14,9 +16,8 @@ program test
     call test_shallow_water_equations()
 
 contains
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine test_shallow_water_equations()
         !
         !  Purpose:
@@ -87,11 +88,11 @@ contains
         ! Dictionary
         !--------------------------------------------------------------------------------
         integer (ip), parameter :: NLON=128
-        integer (ip), parameter :: NLAT=NLON/2
+        integer (ip), parameter :: NLAT=NLON/2 + 1
         integer (ip), parameter :: NTRUNC=42
         integer (ip), parameter :: NL = 90
         integer (ip), parameter :: NMDIM = (NTRUNC+1)*(NTRUNC+2)/2
-        integer (ip)            ::  MAXIMUM_NUMBER_OF_TIME_ITERATIONS
+        integer (ip)            :: MAXIMUM_NUMBER_OF_TIME_ITERATIONS
         integer (ip)            :: MPRINT
         integer (ip)            :: i, j !! Counters
         integer (ip)            :: cycle_number
@@ -130,7 +131,7 @@ contains
         real (wp), parameter :: HALF_PI = 0.5_wp * PI
         real (wp), parameter :: RADIAN_UNIT = PI/180.0_wp
         real (wp), parameter :: ROTATION_RATE_OF_EARTH = 7.292e-5_wp
-        real (wp), parameter :: DT = 300.0_wp
+        real (wp), parameter :: DT = 600.0_wp
         real (wp), parameter :: TILT_ANGLE = 60.0_wp
         real (wp), parameter :: ALPHA = RADIAN_UNIT * TILT_ANGLE
         real (wp), parameter :: LONGITUDINAL_MESH = (2.0_wp * PI)/NLON
@@ -151,18 +152,19 @@ contains
         real (wp) :: v2max
         real (wp) :: p2max
         real (wp) :: vmax
-        real (wp)                           :: pmax
+        real (wp)                         :: pmax
         character (len=:), allocatable    :: write_format
-        type (GaussianSphericalHarmonic)    :: sphere
+        type (GaussianSphericalHarmonic)  :: sphere
         !--------------------------------------------------------------------------------
 
-        write( stdout, '(A)') 'Test program for GaussianSphericalHarmonic'
-        write( stdout, '(A)') ' '
+        write( stdout, '(A)' ) ''
+        write( stdout, '(A)') ' *** Test program for TYPE(GaussianSphericalHarmonic) ***'
+        write( stdout, '(A)') ''
         write( stdout, '(A)') 'Non-linear steady-state geostropic flow in a shallow water model'
-        write( stdout, '(A)') ' '
+        write( stdout, '(A)') ''
         write( stdout, '(A, I11)') 'Triangular trunction number  = ', NTRUNC
         write( stdout, '(A, I11)') 'Number of gaussian latitudes = ', NLAT
-        write( stdout, '(A)') ' '
+        write( stdout, '(A)') ''
 
         ! Set constants
         MAXIMUM_NUMBER_OF_TIME_ITERATIONS = nint( 864.0e+2_wp * 5.0_wp/DT, kind=ip)
@@ -325,7 +327,7 @@ contains
                     source = '(A, i10, A, f10.2/, A, f10.0, A, i10/, A, i10, '&
                     //'A, i10/, A, 1pe15.6, A, 1pe15.6, /A, 1pe15.6, A, 1pe15.6)' &
                     )
-                write( stdout, '(A)' ) ' '
+                write( stdout, '(A)' ) ''
                 write( stdout, '(A)' ) ' steady nonlinear rotated flow:'
                 write( stdout, fmt = write_format ) &
                     ' cycle number              ', cycle_number, &
@@ -444,7 +446,7 @@ contains
                 - (16.0_wp/12.0_wp) * dpdtnm(:, n_now) &
                 + (5.0_wp/12.0_wp) * dpdtnm(:, n_old) )
 
-            !==> SWITCH INDICES.
+            !==> switch indices
 
             nsav1 = n_new
             nsav2 = n_now
@@ -453,17 +455,21 @@ contains
             n_old = nsav2
 
         !==> end time step loop
-
         end do
 
-        !==> deallocate arrays in object.
-
+        !==>  Release memory
         call sphere%destroy()
 
+        ! Print compiler info
+        write( stdout, '(A)' ) ''
+        write( stdout, '(4A)' ) 'This file was compiled by ', &
+            compiler_version(), ' using the options ', &
+            compiler_options()
+        write( stdout, '(A)' ) ''
+
     end subroutine test_shallow_water_equations
-    !
-    !*****************************************************************************************
-    !
+
+
     pure function compute_initial_unrotated_longitudinal_velocity( &
         amp, thetad ) result (return_value)
         !
@@ -478,7 +484,7 @@ contains
         !--------------------------------------------------------------------------------
         ! Dictionary: local variables
         !--------------------------------------------------------------------------------
-        real (wp), parameter :: ZERO = nearest( 1.0_wp, 1.0_wp) - nearest( 1.0_wp, -1.0_wp)
+        real (wp), parameter :: ZERO = nearest(1.0_wp, 1.0_wp)-nearest(1.0_wp, -1.0_wp)
         real (wp), parameter :: PI = acos( -1.0_wp )
         real (wp)            :: x
         !--------------------------------------------------------------------------------
@@ -486,7 +492,7 @@ contains
         associate( &
             thetab => -PI/6.0_wp, &
             thetae => PI/2.0_wp, &
-            xe     => 3.0e-1_wp &
+            xe => 3.0e-1_wp &
             )
 
             x =xe*(thetad-thetab)/(thetae-thetab)
@@ -498,13 +504,11 @@ contains
             associate( arg => (-1.0_wp/x) - (1.0_wp/(xe-x)) + (4.0_wp/xe) )
                 return_value = amp * exp( arg )
             end associate
-
         end associate
 
     end function compute_initial_unrotated_longitudinal_velocity
-    !
-    !*****************************************************************************************
-    !
+
+
     pure function atanxy( x, y ) result (return_value)
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
@@ -513,7 +517,7 @@ contains
         real (wp), intent (in) :: y
         real (wp)              :: return_value
         !--------------------------------------------------------------------------------
-        real (wp), parameter :: ZERO = nearest( 1.0_wp, 1.0_wp) - nearest( 1.0_wp, -1.0_wp)
+        real (wp), parameter :: ZERO = nearest(1.0_wp, 1.0_wp)-nearest(1.0_wp, -1.0_wp)
         !--------------------------------------------------------------------------------
 
         ! Initialize return value
@@ -524,9 +528,8 @@ contains
         return_value = atan2( y, x )
 
     end function atanxy
-    !
-    !*****************************************************************************************
-    !
+
+
     subroutine compute_sine_transform( x )
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
@@ -540,9 +543,9 @@ contains
         !--------------------------------------------------------------------------------
 
         associate( n => size(x) )
-
+            ! Allocate memory
             allocate( w(n) )
-
+            ! Associate various quantities
             associate( arg => acos(-1.0_wp)/(n+1) )
                 do j = 1, n
                     w(j) = 0.0_wp
@@ -557,13 +560,12 @@ contains
 
         x = 2.0_wp * w
 
-        ! Free memory
+        ! Release memory
         deallocate(w)
 
     end subroutine compute_sine_transform
-    !
-    !*****************************************************************************************
-    !
+
+
     pure function compute_cosine_transform(theta, cf) result (return_value)
         !--------------------------------------------------------------------------------
         ! Dictionary: calling arguments
@@ -586,7 +588,6 @@ contains
         end associate
 
     end function compute_cosine_transform
-    !
-    !*****************************************************************************************
-    !
+
+
 end program test
